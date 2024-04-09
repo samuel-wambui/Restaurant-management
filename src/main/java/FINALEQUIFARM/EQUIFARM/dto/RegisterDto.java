@@ -1,8 +1,6 @@
 package FINALEQUIFARM.EQUIFARM.dto;
 
 
-
-import FINALEQUIFARM.EQUIFARM.model.Employee;
 import lombok.Data;
 
 @Data
@@ -10,17 +8,18 @@ public class RegisterDto {
     private String verificationCode;
     private String username;
     private String password;
-    private int pfNumber;
+    private long phoneNumber;
     private String email;
+    private long id;
 
 
-    public RegisterDto(String username, String password, int pfNumber, String email,String verificationCode) {
+    public RegisterDto(String verificationCode, String username, String password, long phoneNumber, String email, long id) {
+        this.verificationCode = verificationCode;
         this.username = username;
         this.password = password;
-        this.pfNumber = pfNumber;
+        this.phoneNumber = phoneNumber;
         this.email = email;
-        this.verificationCode = verificationCode;
-
-
+        this.id = id;
     }
 }
+

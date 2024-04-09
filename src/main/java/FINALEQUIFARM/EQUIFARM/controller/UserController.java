@@ -1,4 +1,4 @@
-package FINALEQUIFARM.EQUIFARM.controller;
+/*package FINALEQUIFARM.EQUIFARM.controller;
 
 import FINALEQUIFARM.EQUIFARM.model.Employee;
 import FINALEQUIFARM.EQUIFARM.model.Role;
@@ -32,11 +32,11 @@ public class UserController {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
         // Load the user making the request from the database
-        Optional<Employee> requestingEmployee = employeeRepository.findByUsername(userDetails.getUsername());
+        boolean requestingEmployee = employeeRepository.findByUsernameAndIsDeletedFalse(userDetails.getUsername());
 
         // Check if the requesting user has permission to assign roles
-        if (!requestingEmployee.isEmpty()) {
-            requestingEmployee.get().isAdmin();
+        if (!requestingEmployee) {
+            requestingEmployee.isAdmin();
         }
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body("You are not authorized to assign roles.");
@@ -44,4 +44,4 @@ public class UserController {
         // Load the user to whom roles will be assigned
     }
 }
-
+*/

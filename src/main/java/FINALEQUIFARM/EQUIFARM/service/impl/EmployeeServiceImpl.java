@@ -27,34 +27,38 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public List<Employee> getAllEmployees() {
-        return employeeRepository.findAll();
+        return employeeRepository.findAllByDeletedFalse();
     }
 
     @Override
     public Employee getEmployeeById(long id) {
-        return employeeRepository.findById(id)
+        return employeeRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ExemptionNotFound("Employee", "Id", id));
     }
 
     @Override
     public Employee updateEmployee(Employee employee, long id) {
-        Employee existingEmployee = employeeRepository.findById(id)
+        Employee existingEmployee = employeeRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ExemptionNotFound("Employee", "Id", id));
 
         existingEmployee.setUsername(employee.getUsername());
         existingEmployee.setEmail(employee.getEmail());
-        existingEmployee.setPfNumber(employee.getPfNumber());
+        existingEmployee.setPhoneNumber(employee.getPhoneNumber());
         existingEmployee.setPassword(employee.getPassword());
 
         return employeeRepository.save(existingEmployee);
     }
 
     @Override
-    public void deleteEmployee(long id) {
-        employeeRepository.findById(id)
+    public boolean deleteEmployee(long id) {
+        Employee employee = employeeRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new ExemptionNotFound("Employee", "Id", id));
-        employeeRepository.deleteById(id);
+        employee.setDeleted(true); // Ensure the deleted property is properly set
+        employeeRepository.save(employee);
+        return true;
+
     }
+
 
     @Override
     public void assignRoles(Employee employee, List<Role> roles) {

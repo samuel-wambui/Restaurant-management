@@ -26,7 +26,7 @@ public class DetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Employee user = employeeRepository.findByUsername(username)
+        Employee user = employeeRepository.findByUsernameAndDeletedFalse(username)
                 .orElseThrow(()->new UsernameNotFoundException("Username not found"));
         return new User(user.getUsername(),user.getPassword(),mapRolesToAuthorities(user.getRoles()));
 

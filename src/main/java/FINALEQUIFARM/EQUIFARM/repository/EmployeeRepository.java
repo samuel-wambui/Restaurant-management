@@ -3,15 +3,22 @@ package FINALEQUIFARM.EQUIFARM.repository;
 import FINALEQUIFARM.EQUIFARM.model.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
-public interface EmployeeRepository extends JpaRepository<Employee,Long> {
+public interface EmployeeRepository extends JpaRepository<Employee, Long> {
+
+   Optional<Employee> findByUsernameAndDeletedFalse(String username);
+
+   boolean existsByUsernameAndDeletedFalse(String username);
+
+   boolean existsByPhoneNumberAndDeletedFalse(long phoneNumber);
+
+   boolean existsByEmailAndDeletedFalse(String email);
+
+   Optional<Employee> findByIdAndDeletedFalse(long id);
+
+   List<Employee> findAllByDeletedFalse();
 
 
-   Optional<Employee> findByUsername(String username);
-   boolean existsByUsername(String username);
-   boolean existsByPfNumber(int pfNumber);
-   boolean existsByEmail(String email);
-
-   Optional<Employee> findById(long id);
 }
