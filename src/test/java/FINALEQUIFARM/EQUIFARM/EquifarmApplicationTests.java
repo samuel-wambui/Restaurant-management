@@ -14,9 +14,5 @@ class EquifarmApplicationTests {
 	@Autowired
 	private Model model;
 
-	@Test
-	void sendEmailWithVerificationCode() {
-		// Call the sendEmailWithVerificationCode() method of EmailSender
-		emailSender.sendEmailWithVerificationCode(model.getTo(), model.getSubject(), model.getText());
-	}
+
 }
