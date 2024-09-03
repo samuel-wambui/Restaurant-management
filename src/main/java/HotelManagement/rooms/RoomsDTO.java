@@ -10,7 +10,6 @@ import java.time.LocalDate;
 @Getter
 @Data
 public class RoomsDTO {
-    private Long id;
     private String roomNumber;
     private String roomType;
     private int capacity;
