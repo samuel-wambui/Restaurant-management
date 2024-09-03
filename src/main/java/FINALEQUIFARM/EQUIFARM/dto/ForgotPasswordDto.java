@@ -7,12 +7,12 @@ import lombok.Data;
 public class ForgotPasswordDto {
     private String username;
     private String Email;
-    private long phoneNumber;
+    private String phoneNumber;
     private String Password;
     private String confirmPassword;
 
 
-    public ForgotPasswordDto(Employee employee, String username, String email, long phoneNumber, String password, String confirmPassword) {
+    public ForgotPasswordDto(Employee employee, String username, String email, String phoneNumber, String password, String confirmPassword) {
         this.username = username;
         Email = email;
         this.phoneNumber = phoneNumber;

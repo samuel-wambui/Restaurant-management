@@ -18,21 +18,25 @@ import java.util.stream.Collectors;
 
 @Service
 public class DetailsService implements UserDetailsService {
-    private EmployeeRepository employeeRepository;
+
+    private final EmployeeRepository employeeRepository;
+
     @Autowired
-    public DetailsService(EmployeeRepository employeeRepository){
-        this.employeeRepository= employeeRepository;
+    public DetailsService(EmployeeRepository employeeRepository) {
+        this.employeeRepository = employeeRepository;
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Employee user = employeeRepository.findByUsernameAndDeletedFalse(username)
-                .orElseThrow(()->new UsernameNotFoundException("Username not found"));
-        return new User(user.getUsername(),user.getPassword(),mapRolesToAuthorities(user.getRoles()));
-
+        // Adjusted to check for "N" (not deleted) in the deletedFlag
+        Employee user = employeeRepository.findByUsernameAndDeletedFlag("N", username)
+                .orElseThrow(() -> new UsernameNotFoundException("Username not found"));
+        return new User(user.getUsername(), user.getPassword(), mapRolesToAuthorities(user.getRoles()));
     }
-private Collection<GrantedAuthority> mapRolesToAuthorities(List<Role> roles){
-        return roles.stream().map
-                ((role -> new SimpleGrantedAuthority(role.getName()))).collect(Collectors.toList());
-}
+
+    private Collection<GrantedAuthority> mapRolesToAuthorities(List<Role> roles) {
+        return roles.stream()
+                .map(role -> new SimpleGrantedAuthority(role.getName()))
+                .collect(Collectors.toList());
+    }
 }

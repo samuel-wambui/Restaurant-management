@@ -8,17 +8,16 @@ import java.util.Optional;
 
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
-   Optional<Employee> findByUsernameAndDeletedFalse(String username);
+   Optional<Employee> findByUsernameAndDeletedFlag(String username, String deletedFlag);
 
-   boolean existsByUsernameAndDeletedFalse(String username);
+   boolean existsByUsernameAndDeletedFlag(String username, String deletedFlag);
 
-   boolean existsByPhoneNumberAndDeletedFalse(long phoneNumber);
+   boolean existsByPhoneNumberAndDeletedFlag(String phoneNumber, String deletedFlag);
 
-   boolean existsByEmailAndDeletedFalse(String email);
+   boolean existsByEmailAndDeletedFlag(String email, String deletedFlag);
 
-   Optional<Employee> findByIdAndDeletedFalse(long id);
+   Optional<Employee> findByIdAndDeletedFlag(Long id, String deletedFlag);
 
-   List<Employee> findAllByDeletedFalse();
-
+   List<Employee> findAllByDeletedFlag(String deletedFlag);
 
 }

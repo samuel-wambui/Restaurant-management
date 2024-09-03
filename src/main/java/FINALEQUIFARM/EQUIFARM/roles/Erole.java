@@ -1,4 +1,4 @@
-package FINALEQUIFARM.EQUIFARM.model;
+package FINALEQUIFARM.EQUIFARM.roles;
 
 public enum Erole {
     ROLE_SUPERUSER,

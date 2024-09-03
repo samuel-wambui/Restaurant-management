@@ -3,13 +3,12 @@ package FINALEQUIFARM.EQUIFARM.controller;
 import FINALEQUIFARM.EQUIFARM.EmailApp.EmailSender;
 import FINALEQUIFARM.EQUIFARM.EmailApp.Model;
 import FINALEQUIFARM.EQUIFARM.model.Employee;
-import FINALEQUIFARM.EQUIFARM.service.EmployeeService;
+import FINALEQUIFARM.EQUIFARM.model.EmployeeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @RestController
 @CrossOrigin
@@ -34,25 +33,19 @@ public class EmployeeController {
     @PostMapping
     public ResponseEntity<?> saveEmployee(@RequestBody Employee employee) {
         try {
-            // Check if the email address is provided
             if (employee.getEmail() == null || employee.getEmail().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email address cannot be null");
             }
 
-            // Check if the text for the email is provided
             if (model.getText() == null || model.getText().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email text cannot be null");
             }
 
-            // Generate verification code and set verification time
             employee.generateVerificationCode();
-
-            // Save the employee
             Employee savedEmployee = employeeService.saveEmployee(employee);
 
-            // Send email with verification code
             String toEmail = employee.getEmail();
-            String text = "Hello " + savedEmployee.getUsername() + " your verification code is " + savedEmployee.getVerificationCode() + ". Thank you!";
+            String text = "Hello " + savedEmployee.getUsername() + ", your verification code is " + savedEmployee.getVerificationCode() + ". Thank you!";
             emailSender.sendEmailWithVerificationCode(toEmail, model.getSubject(), text);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(savedEmployee);
@@ -64,25 +57,23 @@ public class EmployeeController {
     @PostMapping("/verify")
     public ResponseEntity<String> verifyEmployee(@RequestParam Long id, @RequestParam String verificationCode) {
         try {
-            // Retrieve the employee by ID
-            Employee employee = employeeService.getEmployeeById(id);
+            Employee employee = employeeService.findById(id).orElse(null);
 
-            // Check if the verification code matches
-            if (verificationCode.equals(employee.getVerificationCode())) {
-                // Check if the verification code is expired
-                LocalDateTime verificationTime = employee.getVerificationTime();
+            if (employee == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Employee not found");
+            }
+
+            if (employee.verifyCode(verificationCode)) {
                 LocalDateTime currentTime = LocalDateTime.now();
-                LocalDateTime expiryTime = verificationTime.plusMinutes(2); // Expiry time is 5 minutes after generation
+                LocalDateTime expiryTime = employee.getVerificationTime().plusMinutes(2); // Expiry time is 2 minutes after generation
                 if (currentTime.isAfter(expiryTime)) {
                     employeeService.deleteEmployee(id);
                     return ResponseEntity.badRequest().body("Verification code has expired");
                 }
 
-                // Update the employee's status to active
-                employee.setVerified(true);
-                employeeService.saveEmployee(employee);
+                employee.setVerifiedFlag(true);
+                employeeService.updateEmployee(employee);
 
-                // Send email to confirm verification
                 String toEmail = employee.getEmail();
                 String text = "Dear " + employee.getUsername() + ", your account has been successfully verified. Thank you!";
                 emailSender.sendEmailWithVerificationCode(toEmail, model.getSubject(), text);
@@ -96,31 +87,53 @@ public class EmployeeController {
         }
     }
 
-    @GetMapping
-    public List<Employee> getAllEmployees() {
-        return employeeService.getAllEmployees();
-    }
+//    @GetMapping
+//    public ResponseEntity<List<Employee>> getAllEmployees() {
+//        try {
+//            List<Employee> employees = employeeService.findAll();
+//            return ResponseEntity.ok(employees);
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+//        }
+//    }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getEmployeeById(@PathVariable("id") long employeeId) {
         try {
-            Employee employee = employeeService.getEmployeeById(employeeId);
-            return ResponseEntity.ok(employee);
+            Employee employee = employeeService.findById(employeeId).orElse(null);
+            if (employee != null) {
+                return ResponseEntity.ok(employee);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Employee not found");
+            }
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Employee not found");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error retrieving employee: " + e.getMessage());
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Employee> updateEmployee(@PathVariable("id") long id, @RequestBody Employee employee) {
-        Employee updatedEmployee = employeeService.updateEmployee(employee, id);
-        return ResponseEntity.ok(updatedEmployee);
-
+    public ResponseEntity<?> updateEmployee(@PathVariable("id") long id, @RequestBody Employee employee) {
+        try {
+            Employee existingEmployee = employeeService.findById(id).orElse(null);
+            if (existingEmployee != null) {
+                employee.setId(id);
+                Employee updatedEmployee = employeeService.updateEmployee(employee);
+                return ResponseEntity.ok(updatedEmployee);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Employee not found");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating employee: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteEmployee(@PathVariable("id") long id) {
-        employeeService.deleteEmployee(id);
-        return ResponseEntity.ok("Employee deleted successfully");
+        try {
+            employeeService.deleteEmployee(id);
+            return ResponseEntity.ok("Employee deleted successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting employee: " + e.getMessage());
+        }
     }
 }

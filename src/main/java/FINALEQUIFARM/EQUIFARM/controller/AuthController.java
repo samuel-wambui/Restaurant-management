@@ -6,9 +6,9 @@ import FINALEQUIFARM.EQUIFARM.dto.ForgotPasswordDto;
 import FINALEQUIFARM.EQUIFARM.dto.LoginDto;
 import FINALEQUIFARM.EQUIFARM.dto.RegisterDto;
 import FINALEQUIFARM.EQUIFARM.model.Employee;
+import FINALEQUIFARM.EQUIFARM.model.EmployeeService;
 import FINALEQUIFARM.EQUIFARM.repository.EmployeeRepository;
 import FINALEQUIFARM.EQUIFARM.repository.RoleRepository;
-import FINALEQUIFARM.EQUIFARM.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +28,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+
     @Autowired
     private AuthenticationManager authenticationManager;
 
@@ -54,13 +55,13 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody RegisterDto registerDto) {
-        if (employeeRepository.existsByUsernameAndDeletedFalse(registerDto.getUsername())) {
+        if (employeeRepository.existsByUsernameAndDeletedFlag("N", registerDto.getUsername())) {
             return new ResponseEntity<>("Username is taken", HttpStatus.BAD_REQUEST);
         }
-        if (employeeRepository.existsByEmailAndDeletedFalse(String.valueOf(registerDto.getPhoneNumber()))) {
+        if (employeeRepository.existsByEmailAndDeletedFlag("N", String.valueOf(registerDto.getPhoneNumber()))) {
             return new ResponseEntity<>("PF Number is already registered", HttpStatus.BAD_REQUEST);
         }
-        if (employeeRepository.existsByPhoneNumberAndDeletedFalse(registerDto.getPhoneNumber())) {
+        if (employeeRepository.existsByPhoneNumberAndDeletedFlag("N", registerDto.getPhoneNumber())) {
             return new ResponseEntity<>("Email is already registered", HttpStatus.BAD_REQUEST);
         }
 
@@ -87,7 +88,8 @@ public class AuthController {
     public ResponseEntity<String> verifyEmployee(@RequestParam Long id, @RequestParam String verificationCode) {
         try {
             // Retrieve the employee by ID
-            Optional<Employee> optionalEmployee = employeeRepository.findByIdAndDeletedFalse(id);
+            Optional<Employee> optionalEmployee = employeeRepository.findByIdAndDeletedFlag(id, "N");
+
 
             if (optionalEmployee.isPresent()) {
                 Employee employee = optionalEmployee.get();
@@ -104,8 +106,8 @@ public class AuthController {
                         return ResponseEntity.badRequest().body("Verification code has expired");
                     }
 
-                    // Update the employee's status to active
-                    employee.setVerified(true);
+                    // Update the employee's verified flag to "Y"
+                    employee.setVerifiedFlag(true);
                     employeeService.saveEmployee(employee);
 
                     // Send email to confirm verification
@@ -134,15 +136,15 @@ public class AuthController {
                 throw new LockedException("Your account has been blocked due to too many failed login attempts. Please reset your password.");
             }
 
-            Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndDeletedFalse(username);
+            Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndDeletedFlag("N", username);
 
             if (optionalEmployee.isPresent()) {
                 Employee employee = optionalEmployee.get();
-                if (employee.isDeleted()) {
+                if (employee.getDeletedFlag().equals("Y")) {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Account deactivated or deleted. Please contact support.");
-                } else if (employee.isLocked()) {
+                } else if (employee.getLockedFlag().equals("Y")) {
                     return ResponseEntity.status(HttpStatus.LOCKED).body("Your account has been locked. Please reset your password.");
-                } else if (!employee.isVerified()) {
+                } else if (!employee.getVerifiedFlag().equals("Y")) {
                     return ResponseEntity.status(HttpStatus.OK).body("Finish registration process first.");
                 } else {
                     Authentication authentication = authenticationManager.authenticate(
@@ -167,12 +169,12 @@ public class AuthController {
             int remainingAttempts = MAX_LOGIN_ATTEMPTS - attempts;
 
             if (remainingAttempts <= 0) {
-                Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndDeletedFalse(username);
+                Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndDeletedFlag("N", username);
                 if (optionalEmployee.isPresent()) {
 
                     Employee employee = optionalEmployee.get();
-                    if (!employee.isDeleted() && !employee.isLocked()) {
-                        employee.setLocked(true);
+                    if (employee.getLockedFlag().equals("N")) {
+                        employee.setLockedFlag(true);
                         employeeRepository.save(employee);
                         return ResponseEntity.status(HttpStatus.LOCKED).body("Your account has been locked. Please reset your password.");
                     }
@@ -187,22 +189,21 @@ public class AuthController {
         }
     }
 
-
     @PostMapping("/forgotPassword")
     public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordDto forgotPasswordDto) {
         // Check if the employee exists and verify their identity
-        if (employeeRepository.existsByUsernameAndDeletedFalse(forgotPasswordDto.getUsername())
-                && employeeRepository.existsByPhoneNumberAndDeletedFalse(forgotPasswordDto.getPhoneNumber())
-                && employeeRepository.existsByEmailAndDeletedFalse(forgotPasswordDto.getEmail())) {
+        if (employeeRepository.existsByUsernameAndDeletedFlag("N", forgotPasswordDto.getUsername())
+                && employeeRepository.existsByPhoneNumberAndDeletedFlag("N", forgotPasswordDto.getPhoneNumber())
+                && employeeRepository.existsByEmailAndDeletedFlag("N", forgotPasswordDto.getEmail())) {
 
             // Find the employee by username
-            Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndDeletedFalse(forgotPasswordDto.getUsername());
+            Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndDeletedFlag("N", forgotPasswordDto.getUsername());
 
             if (optionalEmployee.isPresent()) {
                 Employee employee = optionalEmployee.get();
 
                 // Use the verification code received in the request
-                 employee.generateResetPasswordVerificationCode();
+                employee.generateResetPasswordVerificationCode();
 
                 // Update the password (assuming you want to update the password, not confirmation password)
                 employee.setPassword(passwordEncoder.encode(forgotPasswordDto.getConfirmPassword()));
@@ -216,7 +217,7 @@ public class AuthController {
                 emailSender.sendEmailWithVerificationCode(toEmail, model.getSubject(), text);
 
                 // Return success response
-                return ResponseEntity.ok("check your email for verification code");
+                return ResponseEntity.ok("Check your email for verification code");
             }
         }
 
@@ -228,7 +229,7 @@ public class AuthController {
     public ResponseEntity<String> verifyForgotPassword(@RequestParam String username, @RequestParam String verificationCode) {
         try {
             // Retrieve the employee by username
-            Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndDeletedFalse(username);
+            Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndDeletedFlag("N", username);
 
             if (optionalEmployee.isPresent()) {
                 Employee employee = optionalEmployee.get();
@@ -244,8 +245,8 @@ public class AuthController {
                         return ResponseEntity.badRequest().body("Verification code has expired");
                     }
 
-                    // Update the employee's status to active
-                    employee.setLocked(false);
+                    // Update the employee's locked flag to "N"
+                    employee.setLockedFlag(false);
                     employeeRepository.save(employee);
 
                     // Send email to confirm verification
@@ -253,7 +254,7 @@ public class AuthController {
                     String text = "Dear " + employee.getUsername() + ", your account has been successfully unlocked. Thank you!";
                     emailSender.sendEmailWithVerificationCode(toEmail, model.getSubject(), text);
 
-                    return ResponseEntity.ok("User password update successfully");
+                    return ResponseEntity.ok("User password updated successfully");
                 } else {
                     return ResponseEntity.badRequest().body("Verification code does not match");
                 }
@@ -265,7 +266,3 @@ public class AuthController {
         }
     }
 }
-
-
-
-
