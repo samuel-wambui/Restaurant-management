@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>FINALEQUIFARM</groupId>
-	<artifactId>EQUIFARM</artifactId>
+	<artifactId>HotelManagement</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>EQUIFARM</name>
 	<description>EQUIFARM project for Spring Boot</description>
