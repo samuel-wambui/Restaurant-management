@@ -24,12 +24,20 @@ public class SecurityConfig {
         httpSecurity
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers
-                                ( "verification/send-email","/api/auth/register","/api/**","api/users**","/verification**","/user")
-                        .permitAll()
-                        .anyRequest().authenticated());
+                        .requestMatchers(
+                                "/v3/api-docs/**",        // Swagger 3.x API docs
+                                "/swagger-ui/**",          // Swagger UI static resources
+                                "/swagger-ui.html",        // Swagger UI HTML page
+                                "/verification/send-email",
+                                "/api/auth/register",
+                                "/api/**",
+                                "/api/users**",
+                                "/verification**",
+                                "/user"
+                        ).permitAll()
+                        .anyRequest().authenticated()
+                );
         return httpSecurity.build();
-
 
     }
     @Bean

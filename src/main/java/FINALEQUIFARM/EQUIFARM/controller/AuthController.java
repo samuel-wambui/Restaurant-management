@@ -168,8 +168,8 @@ public class AuthController {
 
             if (remainingAttempts <= 0) {
                 Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndDeletedFalse(username);
-
                 if (optionalEmployee.isPresent()) {
+
                     Employee employee = optionalEmployee.get();
                     if (!employee.isDeleted() && !employee.isLocked()) {
                         employee.setLocked(true);
