@@ -7,12 +7,8 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class ApiResponse {
+public class ApiResponse<T> {
     private String message;
     private Integer statusCode;
-
-    // Constructor with only message
-    public ApiResponse(String message) {
-        this.message = message;
-    }
+    private T data;
 }

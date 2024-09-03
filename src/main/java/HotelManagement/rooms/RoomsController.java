@@ -7,10 +7,12 @@ import HotelManagement.ApiResponse.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/rooms")
+@Validated
 public class RoomsController {
 
     private final RoomsService roomsService;
@@ -21,51 +23,53 @@ public class RoomsController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<?> getAllRooms() {
+    public ResponseEntity<ApiResponse<List<Rooms>>> getAllRooms() {
         try {
             List<Rooms> rooms = roomsService.getAllRooms();
-            return ResponseEntity.ok(rooms);
+            return ResponseEntity.ok(new ApiResponse<>("Rooms fetched successfully.", HttpStatus.OK.value(), rooms));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to fetch rooms: " + e.getMessage());
+                    .body(new ApiResponse<>("Failed to fetch rooms: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value(), null));
         }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getRoomById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Rooms>> getRoomById(@PathVariable Long id) {
         try {
             Optional<Rooms> room = roomsService.getRoomById(id);
             if (room.isPresent()) {
-                return ResponseEntity.ok(room.get());
+                return ResponseEntity.ok(new ApiResponse<>("Room found.", HttpStatus.OK.value(), room.get()));
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse("Room not found with ID: " + id, HttpStatus.NOT_FOUND.value()));
+                        .body(new ApiResponse<>("Room not found with ID: " + id, HttpStatus.NOT_FOUND.value(), null));
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse("Failed to fetch room: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value()));
+                    .body(new ApiResponse<>("Failed to fetch room: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value(), null));
         }
     }
 
     @PostMapping("/create")
-    public ResponseEntity<?> createRoom(@RequestBody Rooms room) {
+    public ResponseEntity<ApiResponse<Rooms>> createRoom(@RequestBody @Validated Rooms room) {
         try {
             Rooms savedRoom = roomsService.saveRoom(room);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedRoom);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new ApiResponse<>("Room created successfully.", HttpStatus.CREATED.value(), savedRoom));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to create room: " + e.getMessage());
+                    .body(new ApiResponse<>("Failed to create room: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value(), null));
         }
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> deleteRoom(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteRoom(@PathVariable Long id) {
         try {
             roomsService.deleteRoom(id);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Room deleted successfully.");
+            return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                    .body(new ApiResponse<>("Room deleted successfully.", HttpStatus.NO_CONTENT.value(), null));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to delete room: " + e.getMessage());
+                    .body(new ApiResponse<>("Failed to delete room: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR.value(), null));
         }
     }
 }

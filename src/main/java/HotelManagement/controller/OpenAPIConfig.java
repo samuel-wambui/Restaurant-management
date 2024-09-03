@@ -15,9 +15,9 @@ public class OpenAPIConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("MyStore API")
+                        .title("HotelManagement API")
                         .version("v1")
-                        .description("API documentation for MyStore"))
+                        .description("API documentation for HotelManagement"))
                 .components(new Components()
                         .addSecuritySchemes("bearerAuth",
                                 new SecurityScheme()
