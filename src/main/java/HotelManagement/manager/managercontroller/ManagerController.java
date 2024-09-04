@@ -1,5 +1,4 @@
 package HotelManagement.manager.managercontroller;
-
 import HotelManagement.ApiResponse.ApiResponse;
 import HotelManagement.manager.ManagerDto;
 import HotelManagement.manager.ManagerEntity;
@@ -8,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
@@ -64,7 +62,7 @@ public class ManagerController {
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteManager(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<ManagerEntity>> deleteManager(@PathVariable Long id) {
         try {
             managerService.deleteManager(id);
             return ResponseEntity.status(HttpStatus.NO_CONTENT)

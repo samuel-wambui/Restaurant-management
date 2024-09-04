@@ -39,6 +39,9 @@ spring:
     api-docs:
       path: /v3/openapi-docs
 
+file:
+  upload-dir: /path/to/upload/dir
+
 logging:
   level:
     org.springframework.mail: DEBUG
