@@ -6,10 +6,9 @@ import HotelManagement.EmailApp.Model;
 import HotelManagement.dto.ForgotPasswordDto;
 import HotelManagement.dto.LoginDto;
 import HotelManagement.dto.RegisterDto;
-import HotelManagement.model.Employee;
-import HotelManagement.model.EmployeeService;
+import HotelManagement.employee.Employee;
+import HotelManagement.employee.EmployeeService;
 import HotelManagement.repository.EmployeeRepository;
-import HotelManagement.repository.RoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,8 +35,6 @@ public class AuthController {
     @Autowired
     private EmployeeRepository employeeRepository;
 
-    @Autowired
-    private RoleRepository roleRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;

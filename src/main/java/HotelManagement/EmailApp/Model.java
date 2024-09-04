@@ -1,6 +1,6 @@
 package HotelManagement.EmailApp;
 
-import HotelManagement.model.Employee;
+import HotelManagement.employee.Employee;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
