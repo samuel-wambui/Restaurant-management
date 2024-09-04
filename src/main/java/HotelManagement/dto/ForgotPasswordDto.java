@@ -1,6 +1,6 @@
 package HotelManagement.dto;
 
-import HotelManagement.model.Employee;
+import HotelManagement.employee.Employee;
 import lombok.Data;
 
 @Data

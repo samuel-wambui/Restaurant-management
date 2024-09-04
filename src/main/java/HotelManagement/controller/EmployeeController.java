@@ -1,10 +1,10 @@
 package HotelManagement.controller;
 import HotelManagement.EmailApp.EmailSender;
 import HotelManagement.EmailApp.Model;
-import HotelManagement.model.Employee;
+import HotelManagement.employee.Employee;
 
 
-import HotelManagement.model.EmployeeService;
+import HotelManagement.employee.EmployeeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -1,6 +1,6 @@
 package HotelManagement.repository;
 
-import HotelManagement.model.Employee;
+import HotelManagement.employee.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

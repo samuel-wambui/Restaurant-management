@@ -1,5 +1,6 @@
-package HotelManagement.model;
+package HotelManagement.employee;
 
+import HotelManagement.roles.Erole;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -54,13 +55,11 @@ public class Employee {
  @Column(name = "deleted_flag", nullable = false)
  private String deletedFlag = "N";
 
- @ManyToMany
- @JoinTable(
-         name = "employee_roles",
-         joinColumns = @JoinColumn(name = "employee_id"),
-         inverseJoinColumns = @JoinColumn(name = "role_id") // should match with Role id type
- )
- private List<Role> roles;
+ @ElementCollection(targetClass = Erole.class)
+ @Enumerated(EnumType.STRING)
+ @CollectionTable(name = "employee_roles", joinColumns = @JoinColumn(name = "employee_id"))
+ @Column(name = "role")
+ private List<Erole> roles;
 
  public Employee(String username, String phoneNumber, String email, String password) {
   this.username = username;
@@ -127,5 +126,4 @@ public class Employee {
  public void setDeletedFlag(boolean isDeleted) {
   this.deletedFlag = isDeleted ? "Y" : "N";
  }
-
 }
