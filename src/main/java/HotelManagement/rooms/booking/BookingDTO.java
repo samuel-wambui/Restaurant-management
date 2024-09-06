@@ -23,6 +23,6 @@ public class BookingDTO {
     private LocalDate checkOutDate;
 
 
-    private double amountPaid;  // New field for amount paid
+    private double amountPaid;
     private PaymentMethod paymentMethod;
 }
