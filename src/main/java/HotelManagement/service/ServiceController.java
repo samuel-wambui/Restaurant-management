@@ -15,9 +15,9 @@ public class ServiceController {
     private ServiceService serviceService;
 
     @GetMapping("GetAll")
-    public ResponseEntity<ApiResponse<List<Service>>> getAllServices() {
+    public ResponseEntity<ApiResponse<List<Services>>> getAllServices() {
         try {
-            List<HotelManagement.service.Service> services = serviceService.getAllServices();
+            List<HotelManagement.service.Services> services = serviceService.getAllServices();
             return ResponseEntity.ok(new ApiResponse<>("Services retrieved successfully", 200, services));
         } catch (Exception e) {
             return ResponseEntity.status(500)
@@ -26,9 +26,9 @@ public class ServiceController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<HotelManagement.service.Service>> getServiceById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<HotelManagement.service.Services>> getServiceById(@PathVariable Long id) {
         try {
-            HotelManagement.service.Service service = serviceService.getServiceById(id);
+            HotelManagement.service.Services service = serviceService.getServiceById(id);
             return ResponseEntity.ok(new ApiResponse<>("Service retrieved successfully", 200, service));
         } catch (RuntimeException e) {
             return ResponseEntity.status(404)
@@ -40,9 +40,9 @@ public class ServiceController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<HotelManagement.service.Service>> createService(@RequestBody ServiceDto serviceDto) {
+    public ResponseEntity<ApiResponse<HotelManagement.service.Services>> createService(@RequestBody ServiceDto serviceDto) {
         try {
-            HotelManagement.service.Service newService = serviceService.createService(serviceDto);
+            HotelManagement.service.Services newService = serviceService.createService(serviceDto);
             return ResponseEntity.status(201)
                     .body(new ApiResponse<>("Service created successfully", 201, newService));
         } catch (Exception e) {
@@ -52,9 +52,9 @@ public class ServiceController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<HotelManagement.service.Service>> updateService(@PathVariable Long id, @RequestBody ServiceDto serviceDto) {
+    public ResponseEntity<ApiResponse<HotelManagement.service.Services>> updateService(@PathVariable Long id, @RequestBody ServiceDto serviceDto) {
         try {
-            HotelManagement.service.Service updatedService = serviceService.updateService(id, serviceDto);
+            HotelManagement.service.Services updatedService = serviceService.updateService(id, serviceDto);
             return ResponseEntity.ok(new ApiResponse<>("Service updated successfully", 200, updatedService));
         } catch (RuntimeException e) {
             return ResponseEntity.status(404)

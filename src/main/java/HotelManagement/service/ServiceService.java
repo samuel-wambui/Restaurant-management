@@ -11,27 +11,27 @@ public class ServiceService {
     @Autowired
     private ServiceRepository serviceRepository;
 
-    public List<HotelManagement.service.Service> getAllServices() {
+    public List<Services> getAllServices() {
         return serviceRepository.findAll();
     }
 
-    public HotelManagement.service.Service getServiceById(Long id) {
+    public Services getServiceById(Long id) {
         return serviceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service not found"));
     }
 
-    public HotelManagement.service.Service createService(ServiceDto serviceDto) {
-        HotelManagement.service.Service service = new HotelManagement.service.Service();
+    public Services createService(ServiceDto serviceDto) {
+        Services service = new Services();
         service.setServiceName(serviceDto.getServiceName());
         service.setDescription(serviceDto.getDescription());
         service.setPrice(serviceDto.getPrice());
         service.setServiceType(serviceDto.getServiceType());
 
-        return serviceRepository.save(service);
+        return serviceRepository.save(service);  // Changed to 'service'
     }
 
-    public HotelManagement.service.Service updateService(Long id, ServiceDto serviceDto) {
-        HotelManagement.service.Service existingService = serviceRepository.findById(id)
+    public Services updateService(Long id, ServiceDto serviceDto) {
+        Services existingService = serviceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Service not found"));
 
         existingService.setServiceName(serviceDto.getServiceName());
