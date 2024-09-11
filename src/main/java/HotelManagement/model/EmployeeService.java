@@ -1,9 +1,16 @@
 package HotelManagement.model;
 
 
+import HotelManagement.dto.LoginDto;
+import HotelManagement.jwt.JwtService;
 import HotelManagement.model.Employee;
 import HotelManagement.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -14,6 +21,11 @@ public class EmployeeService {
 
     @Autowired
     private EmployeeRepository employeeRepository;
+    @Autowired
+    private AuthenticationManager authenticationManager;
+    @Autowired
+    private JwtService jwtService;
+
 
     public Employee saveEmployee(Employee employee) {
         return employeeRepository.save(employee);
@@ -112,4 +124,19 @@ public class EmployeeService {
 
         return codeBuilder.toString();
     }
+
+    public ResponseEntity<String> verify(LoginDto loginDto) {
+        Authentication authentication =
+                authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword()));
+
+        if (authentication.isAuthenticated()) {
+
+            String token = jwtService.generateTocken(loginDto.getUsername());
+            System.out.println("jwt :" + token);
+            return ResponseEntity.ok(token);
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("fail");
+        }
+    }
+
 }

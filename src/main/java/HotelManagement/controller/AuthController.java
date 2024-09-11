@@ -53,7 +53,7 @@ public class AuthController {
 
     private final Map<String, Integer> loginAttempts = new HashMap<>();
     private final int MAX_LOGIN_ATTEMPTS = 3;
-
+    @RequestMapping("/auth")
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody RegisterDto registerDto) {
         if (employeeRepository.existsByUsernameAndDeletedFlag("N", registerDto.getUsername())) {
@@ -133,46 +133,63 @@ public class AuthController {
         String username = loginDto.getUsername();
         try {
             int attempts = loginAttempts.getOrDefault(username, 0);
+
+            // Check if the account is locked due to too many failed login attempts
             if (attempts >= MAX_LOGIN_ATTEMPTS) {
                 throw new LockedException("Your account has been blocked due to too many failed login attempts. Please reset your password.");
             }
 
+            // Find the employee by username and ensure the account isn't marked as deleted
             Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndDeletedFlag("N", username);
-
-            if (optionalEmployee.isPresent()) {
-                Employee employee = optionalEmployee.get();
-                if (employee.getDeletedFlag().equals("Y")) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Account deactivated or deleted. Please contact support.");
-                } else if (employee.getLockedFlag().equals("Y")) {
-                    return ResponseEntity.status(HttpStatus.LOCKED).body("Your account has been locked. Please reset your password.");
-                } else if (!employee.getVerifiedFlag().equals("Y")) {
-                    return ResponseEntity.status(HttpStatus.OK).body("Finish registration process first.");
-                } else {
-                    Authentication authentication = authenticationManager.authenticate(
-                            new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword())
-                    );
-
-                    loginAttempts.put(username, 0);
-
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                    return ResponseEntity.ok("Login successful!");
-                }
-            } else {
+            if (optionalEmployee.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Please register first.");
             }
+
+            Employee employee = optionalEmployee.get();
+
+            // Check if the account is deactivated or deleted
+            if (employee.getDeletedFlag().equals("Y")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Account deactivated or deleted. Please contact support.");
+            }
+
+            // Check if the account is locked
+            if (employee.getLockedFlag().equals("Y")) {
+                return ResponseEntity.status(HttpStatus.LOCKED).body("Your account has been locked. Please reset your password.");
+            }
+
+            // Check if the user has completed the registration process
+            if (!employee.getVerifiedFlag().equals("Y")) {
+                return ResponseEntity.status(HttpStatus.OK).body("Finish registration process first.");
+            }
+
+            // Authenticate the user
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword())
+            );
+
+            // Reset login attempts on successful authentication
+            loginAttempts.put(username, 0);
+
+            // Set the security context for the authenticated user
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            // Proceed with the verification process (call to another service)
+            return employeeService.verify(loginDto);
+
         } catch (LockedException ex) {
+            // Handle LockedException separately and return a locked response
             return ResponseEntity.status(HttpStatus.LOCKED).body(ex.getMessage());
         } catch (Exception ex) {
+            // Increment login attempts on authentication failure
             int attempts = loginAttempts.getOrDefault(username, 0) + 1;
             loginAttempts.put(username, attempts);
 
             int remainingAttempts = MAX_LOGIN_ATTEMPTS - attempts;
 
+            // Lock the account if the user exceeds the maximum login attempts
             if (remainingAttempts <= 0) {
                 Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndDeletedFlag("N", username);
                 if (optionalEmployee.isPresent()) {
-
                     Employee employee = optionalEmployee.get();
                     if (employee.getLockedFlag().equals("N")) {
                         employee.setLockedFlag(true);
@@ -185,6 +202,7 @@ public class AuthController {
                         .body("Your account has been blocked due to too many failed login attempts. Please click forgot password.");
             }
 
+            // Return unauthorized response with the remaining attempts
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body("Incorrect username or password. " + remainingAttempts + " attempts remaining.");
         }
