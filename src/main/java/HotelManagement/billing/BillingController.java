@@ -1,10 +1,11 @@
 package HotelManagement.billing;
-
 import HotelManagement.ApiResponse.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @RestController
@@ -14,8 +15,28 @@ public class BillingController {
     @Autowired
     private BillingService billingService;
 
+    // Method to get all billing records
+    @GetMapping("/getAll")
+    public ResponseEntity<ApiResponse<List<Billing>>> getAllBillings() {
+        try {
+            List<Billing> billings = billingService.getAllBillings();
+            return ResponseEntity.ok(new ApiResponse<>(
+                    "All billings retrieved successfully",
+                    HttpStatus.OK.value(),
+                    billings
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse<>(
+                    "Error retrieving billings: " + e.getMessage(),
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    null
+            ));
+        }
+    }
+
+
     // Method to create a new billing record
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<ApiResponse<Billing>> createBilling(@RequestBody BillingDto billingDto) {
         try {
             Billing billing = billingService.createBilling(billingDto);
@@ -34,7 +55,7 @@ public class BillingController {
     }
 
     // Method to retrieve a billing record by its ID
-    @GetMapping("/{id}")
+    @GetMapping("/GetById")
     public ResponseEntity<ApiResponse<Billing>> getBillingById(@PathVariable Long id) {
         try {
             Billing billing = billingService.getBillingById(id);
@@ -53,7 +74,7 @@ public class BillingController {
     }
 
     // Method to update an existing billing record
-    @PutMapping("/{id}")
+    @PutMapping("/update")
     public ResponseEntity<ApiResponse<Billing>> updateBilling(@PathVariable Long id, @RequestBody BillingDto billingDto) {
         try {
             Billing billing = billingService.updateBilling(id, billingDto);
@@ -72,7 +93,7 @@ public class BillingController {
     }
 
     // Method to delete a billing record by its ID
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteBilling(@PathVariable Long id) {
         try {
             billingService.deleteBilling(id);

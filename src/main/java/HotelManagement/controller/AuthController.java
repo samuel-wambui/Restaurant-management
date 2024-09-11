@@ -1,12 +1,12 @@
 package HotelManagement.controller;
 
-
 import HotelManagement.EmailApp.EmailSender;
 import HotelManagement.EmailApp.Model;
 import HotelManagement.dto.ForgotPasswordDto;
 import HotelManagement.dto.LoginDto;
 import HotelManagement.dto.RegisterDto;
 import HotelManagement.employee.Employee;
+import HotelManagement.employee.EmployeeDTO;
 import HotelManagement.employee.EmployeeService;
 import HotelManagement.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +35,6 @@ public class AuthController {
     @Autowired
     private EmployeeRepository employeeRepository;
 
-
     @Autowired
     private PasswordEncoder passwordEncoder;
 
@@ -56,27 +55,28 @@ public class AuthController {
         if (employeeRepository.existsByUsernameAndDeletedFlag("N", registerDto.getUsername())) {
             return new ResponseEntity<>("Username is taken", HttpStatus.BAD_REQUEST);
         }
-        if (employeeRepository.existsByEmailAndDeletedFlag("N", String.valueOf(registerDto.getPhoneNumber()))) {
-            return new ResponseEntity<>("PF Number is already registered", HttpStatus.BAD_REQUEST);
-        }
-        if (employeeRepository.existsByPhoneNumberAndDeletedFlag("N", registerDto.getPhoneNumber())) {
+        if (employeeRepository.existsByEmailAndDeletedFlag("N", registerDto.getEmail())) {
             return new ResponseEntity<>("Email is already registered", HttpStatus.BAD_REQUEST);
         }
-
+        if (employeeRepository.existsByPhoneNumberAndDeletedFlag("N", registerDto.getPhoneNumber())) {
+            return new ResponseEntity<>("Phone number is already registered", HttpStatus.BAD_REQUEST);
+        }
         Employee employee = new Employee();
-        employee.setUsername(registerDto.getUsername());
-        employee.setPassword(passwordEncoder.encode(registerDto.getPassword()));
-        employee.setPhoneNumber(registerDto.getPhoneNumber());
-        employee.setEmail(registerDto.getEmail());
+        EmployeeDTO employeeDTO = new EmployeeDTO();
+        employeeDTO.setUsername(registerDto.getUsername());
+        employeeDTO.setPassword(passwordEncoder.encode(registerDto.getPassword()));
+        employeeDTO.setPhoneNumber(registerDto.getPhoneNumber());
+        employeeDTO.setEmail(registerDto.getEmail());
 
         // Generate verification code and set verification time
+
         employee.generateVerificationCode();
 
-        employeeRepository.save(employee);
+        employeeService.saveEmployee(employeeDTO);
 
         // Send email with verification code
-        String toEmail = employee.getEmail();
-        String text = "Hello " + employee.getUsername() + ", your verification code is " + employee.getVerificationCode() + ". Thank you!";
+        String toEmail = employeeDTO.getEmail();
+        String text = "Hello " + employeeDTO.getUsername() + ", your verification code is " + employeeDTO.getVerificationCode() + ". Thank you!";
         emailSender.sendEmailWithVerificationCode(toEmail, model.getSubject(), text);
 
         return ResponseEntity.ok("Employee registered successfully");
@@ -85,17 +85,15 @@ public class AuthController {
     @PostMapping("/verify")
     public ResponseEntity<String> verifyEmployee(@RequestParam Long id, @RequestParam String verificationCode) {
         try {
-            // Retrieve the employee by ID
-            Optional<Employee> optionalEmployee = employeeRepository.findByIdAndDeletedFlag(id, "N");
+            Optional<EmployeeDTO> optionalEmployeeDTO = employeeService.findById(id);
 
-
-            if (optionalEmployee.isPresent()) {
-                Employee employee = optionalEmployee.get();
+            if (optionalEmployeeDTO.isPresent()) {
+                EmployeeDTO employeeDTO = optionalEmployeeDTO.get();
 
                 // Check if the verification code matches
-                if (verificationCode.equals(employee.getVerificationCode())) {
+                if (verificationCode.equals(employeeDTO.getVerificationCode())) {
                     // Check if the verification code is expired
-                    LocalDateTime verificationTime = employee.getVerificationTime();
+                    LocalDateTime verificationTime = employeeDTO.getVerificationTime();
                     LocalDateTime currentTime = LocalDateTime.now();
                     LocalDateTime expiryTime = verificationTime.plusMinutes(5); // Expiry time is 5 minutes after generation
 
@@ -105,12 +103,12 @@ public class AuthController {
                     }
 
                     // Update the employee's verified flag to "Y"
-                    employee.setVerifiedFlag(true);
-                    employeeService.saveEmployee(employee);
+                    employeeDTO.setVerifiedFlag("Y");
+                    employeeService.updateEmployee(employeeDTO);
 
                     // Send email to confirm verification
-                    String toEmail = employee.getEmail();
-                    String text = "Dear " + employee.getUsername() + ", your account has been successfully verified. Thank you!";
+                    String toEmail = employeeDTO.getEmail();
+                    String text = "Dear " + employeeDTO.getUsername() + ", your account has been successfully verified. Thank you!";
                     emailSender.sendEmailWithVerificationCode(toEmail, model.getSubject(), text);
 
                     return ResponseEntity.ok("User verified successfully");
@@ -172,7 +170,7 @@ public class AuthController {
 
                     Employee employee = optionalEmployee.get();
                     if (employee.getLockedFlag().equals("N")) {
-                        employee.setLockedFlag(true);
+                        employee.setLockedFlag("Y");
                         employeeRepository.save(employee);
                         return ResponseEntity.status(HttpStatus.LOCKED).body("Your account has been locked. Please reset your password.");
                     }
@@ -203,15 +201,12 @@ public class AuthController {
                 // Use the verification code received in the request
                 employee.generateResetPasswordVerificationCode();
 
-                // Update the password (assuming you want to update the password, not confirmation password)
-                employee.setPassword(passwordEncoder.encode(forgotPasswordDto.getConfirmPassword()));
-
-                // Save the updated employee
+                // Save the updated employee with a new verification code
                 employeeRepository.save(employee);
 
                 // Send email with verification code
                 String toEmail = employee.getEmail();
-                String text = "Hello " + employee.getUsername() + ", your reset password verification code is " + employee.getResetPasswordVerification()+ ". Thank you!";
+                String text = "Hello " + employee.getUsername() + ", your reset password verification code is " + employee.getResetPasswordVerification() + ". Thank you!";
                 emailSender.sendEmailWithVerificationCode(toEmail, model.getSubject(), text);
 
                 // Return success response
@@ -237,14 +232,14 @@ public class AuthController {
                     // Check if the verification code is expired
                     LocalDateTime verificationTime = employee.getResetVerificationTime();
                     LocalDateTime currentTime = LocalDateTime.now();
-                    LocalDateTime expiryTime = verificationTime.plusMinutes(3); // Expiry time is 5 minutes after generation
+                    LocalDateTime expiryTime = verificationTime.plusMinutes(3); // Expiry time is 3 minutes after generation
 
                     if (currentTime.isAfter(expiryTime)) {
                         return ResponseEntity.badRequest().body("Verification code has expired");
                     }
 
-                    // Update the employee's locked flag to "N"
-                    employee.setLockedFlag(false);
+                    // Update the employee's locked flag to "N" and password
+                    employee.setLockedFlag("N");
                     employeeRepository.save(employee);
 
                     // Send email to confirm verification
