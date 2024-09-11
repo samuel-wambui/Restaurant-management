@@ -67,7 +67,7 @@ public class ServiceBookingService {
                 .orElseThrow(() -> new RuntimeException("Service not found"));
 
         existingBooking.setCustomer(customer);
-        existingBooking.setService(service);  // Corrected from services to service
+        existingBooking.setService(service);
 
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
