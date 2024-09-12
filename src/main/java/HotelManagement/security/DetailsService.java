@@ -1,6 +1,7 @@
 package HotelManagement.security;
 
 import HotelManagement.employee.Employee;
+import HotelManagement.employee.Role;
 import HotelManagement.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -11,7 +12,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import javax.management.relation.Role;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
