@@ -2,9 +2,8 @@ package HotelManagement.controller;
 
 import HotelManagement.EmailApp.EmailSender;
 import HotelManagement.EmailApp.Model;
-import HotelManagement.employee.EmployeeDTO;
+import HotelManagement.employee.Employee;
 import HotelManagement.employee.EmployeeService;
-import HotelManagement.roles.Erole;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,11 +19,13 @@ public class EmployeeController {
     private final EmployeeService employeeService;
     private final Model model;
     private final EmailSender emailSender;
+    private final EmployeeService employeeServiceE;
 
-    public EmployeeController(EmployeeService employeeService, Model model, EmailSender emailSender) {
+    public EmployeeController(EmployeeService employeeService, Model model, EmailSender emailSender, EmployeeService employeeServiceE) {
         this.employeeService = employeeService;
         this.model = model;
         this.emailSender = emailSender;
+        this.employeeServiceE = employeeServiceE;
     }
 
     @GetMapping("/welcome")
@@ -33,13 +34,13 @@ public class EmployeeController {
     }
 
     @PostMapping
-    public ResponseEntity<?> saveEmployee(@RequestBody EmployeeDTO employeeDTO) {
+    public ResponseEntity<?> saveEmployee(@RequestBody Employee employee) {
         try {
-            if (employeeDTO.getEmail() == null || employeeDTO.getEmail().isEmpty()) {
+            if (employee.getEmail() == null || employee.getEmail().isEmpty()) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email address cannot be null or empty");
             }
 
-            EmployeeDTO savedEmployee = employeeService.saveEmployee(employeeDTO);
+            Employee savedEmployee = employeeService.saveEmployee(employee);
 
             String toEmail = savedEmployee.getEmail();
             String text = "Hello " + savedEmployee.getUsername() + ", your verification code is " + savedEmployee.getVerificationCode() + ". Thank you!";
@@ -54,11 +55,11 @@ public class EmployeeController {
     @PostMapping("/verify")
     public ResponseEntity<String> verifyEmployee(@RequestParam Long id, @RequestParam String verificationCode) {
         try {
-            EmployeeDTO employeeDTO = employeeService.findById(id)
+            Employee employee = employeeService.findById(id)
                     .orElseThrow(() -> new RuntimeException("Employee not found"));
 
             LocalDateTime currentTime = LocalDateTime.now();
-            LocalDateTime expiryTime = employeeDTO.getVerificationTime().plusMinutes(5);
+            LocalDateTime expiryTime = employee.getVerificationTime().plusMinutes(5);
 
             if (currentTime.isAfter(expiryTime)) {
                 employeeService.deleteEmployee(id);
@@ -66,11 +67,11 @@ public class EmployeeController {
             }
 
             if (employeeService.verifyCode(id, verificationCode)) {
-                employeeDTO.setVerifiedFlag("Y");
-                employeeService.updateEmployee(employeeDTO);
+                employee.setVerifiedFlag(true);
+                employeeService.updateEmployee(employee);
 
-                String toEmail = employeeDTO.getEmail();
-                String text = "Dear " + employeeDTO.getUsername() + ", your account has been successfully verified. Thank you!";
+                String toEmail = employee.getEmail();
+                String text = "Dear " + employee.getUsername() + ", your account has been successfully verified. Thank you!";
                 emailSender.sendEmailWithVerificationCode(toEmail, model.getSubject(), text);
 
                 return ResponseEntity.ok("User verified successfully");
@@ -85,19 +86,19 @@ public class EmployeeController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getEmployeeById(@PathVariable("id") long employeeId) {
         try {
-            EmployeeDTO employeeDTO = employeeService.findById(employeeId)
+            Employee employee = employeeService.findById(employeeId)
                     .orElseThrow(() -> new RuntimeException("Employee not found"));
-            return ResponseEntity.ok(employeeDTO);
+            return ResponseEntity.ok(employee);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error retrieving employee: " + e.getMessage());
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateEmployee(@PathVariable("id") long id, @RequestBody EmployeeDTO employeeDTO) {
+    public ResponseEntity<?> updateEmployee(@PathVariable("id") long id, @RequestBody Employee employee) {
         try {
-            employeeDTO.setId(id);
-            EmployeeDTO updatedEmployee = employeeService.updateEmployee(employeeDTO);
+            employee.setId(id);
+            Employee updatedEmployee = employeeService.updateEmployee(employee);
             return ResponseEntity.ok(updatedEmployee);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating employee: " + e.getMessage());
@@ -115,42 +116,43 @@ public class EmployeeController {
     }
 
     @GetMapping
-    public ResponseEntity<List<EmployeeDTO>> getAllEmployees() {
+    public ResponseEntity<List<Employee>> getAllEmployees() {
         try {
-            List<EmployeeDTO> employees = employeeService.findAllEmployees();
+            List<Employee> employees = employeeServiceE.findAllEmployees();
             return ResponseEntity.ok(employees);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-    }
-
-    @GetMapping("/supervisor/{supervisorId}")
-    public ResponseEntity<List<EmployeeDTO>> getEmployeesBySupervisor(@PathVariable Long supervisorId) {
-        try {
-            List<EmployeeDTO> employees = employeeService.getEmployeesBySupervisor(supervisorId);
-            return ResponseEntity.ok(employees);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-    }
-
-    @PostMapping("/{supervisorId}/assign/{employeeId}")
-    public ResponseEntity<?> assignEmployeeToSupervisor(@PathVariable Long supervisorId, @PathVariable Long employeeId) {
-        try {
-            employeeService.assignSupervisedEmployee(supervisorId, employeeId);
-            return ResponseEntity.ok("Employee assigned to supervisor successfully");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error assigning employee to supervisor: " + e.getMessage());
-        }
-    }
-
-    @PutMapping("/{id}/assign-shift")
-    public ResponseEntity<?> assignShiftToSupervisor(@PathVariable Long id, @RequestParam String shiftSchedule) {
-        try {
-            employeeService.assignShiftToSupervisor(id, shiftSchedule);
-            return ResponseEntity.ok("Shift schedule assigned to supervisor successfully");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error assigning shift schedule: " + e.getMessage());
         }
     }
 }
+
+//    @GetMapping("/supervisor/{supervisorId}")
+//    public ResponseEntity<List<Employee>> getEmployeesBySupervisor(@PathVariable Long supervisorId) {
+//        try {
+//            List<Employee> employees = employeeService.getEmployeesBySupervisor(supervisorId);
+//            return ResponseEntity.ok(employees);
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+//        }
+//    }
+//
+//    @PostMapping("/{supervisorId}/assign/{employeeId}")
+//    public ResponseEntity<?> assignEmployeeToSupervisor(@PathVariable Long supervisorId, @PathVariable Long employeeId) {
+//        try {
+//            employeeService.assignSupervisedEmployee(supervisorId, employeeId);
+//            return ResponseEntity.ok("Employee assigned to supervisor successfully");
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error assigning employee to supervisor: " + e.getMessage());
+//        }
+//    }
+//
+//    @PutMapping("/{id}/assign-shift")
+//    public ResponseEntity<?> assignShiftToSupervisor(@PathVariable Long id, @RequestParam String shiftSchedule) {
+//        try {
+//            employeeService.assignShiftToSupervisor(id, shiftSchedule);
+//            return ResponseEntity.ok("Shift schedule assigned to supervisor successfully");
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error assigning shift schedule: " + e.getMessage());
+//        }
+//    }
+//}

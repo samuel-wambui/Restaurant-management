@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.Random;
 
 @Service
-public class EmployeeService {
+public class EmployeeServiceM {
 
     @Autowired
     private EmployeeRepository employeeRepository;

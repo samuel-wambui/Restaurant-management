@@ -1,12 +1,12 @@
 package HotelManagement.employee;
 
+import HotelManagement.employee.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import javax.management.relation.Role;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
