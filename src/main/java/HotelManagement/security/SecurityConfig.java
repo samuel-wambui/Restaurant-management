@@ -12,15 +12,19 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @EnableWebSecurity
 @Configuration
 public class SecurityConfig {
 
+    private final JwtFilter jwtFilter;  // Injecting the JwtFilter
+
     private final DetailsService detailsService;
     private final CustomUserDetailsPasswordService userDetailsPasswordService;
 
-    public SecurityConfig(DetailsService detailsService, CustomUserDetailsPasswordService userDetailsPasswordService) {
+    public SecurityConfig(JwtFilter jwtFilter, DetailsService detailsService, CustomUserDetailsPasswordService userDetailsPasswordService) {
+        this.jwtFilter = jwtFilter;  // Assign the JwtFilter
         this.detailsService = detailsService;
         this.userDetailsPasswordService = userDetailsPasswordService;
     }
@@ -42,8 +46,9 @@ public class SecurityConfig {
                                 "/verification**",
                                 "/user"
                         ).permitAll()
-                        .anyRequest().authenticated()
-                );
+                        .anyRequest().authenticated())
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);  // Adding the JwtFilter
+
         return httpSecurity.build();
     }
 
@@ -63,6 +68,6 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12); // Strength of 12 for BCrypt
+        return new BCryptPasswordEncoder(12);  // Strength of 12 for BCrypt
     }
 }
