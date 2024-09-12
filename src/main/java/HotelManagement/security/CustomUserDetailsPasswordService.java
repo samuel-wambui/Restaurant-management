@@ -1,6 +1,7 @@
 package HotelManagement.security;
 
-import HotelManagement.model.Employee;
+
+import HotelManagement.employee.Employee;
 import HotelManagement.repository.EmployeeRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsPasswordService;

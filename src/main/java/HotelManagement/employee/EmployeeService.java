@@ -15,7 +15,7 @@ public class EmployeeService {
     @Autowired
     private EmployeeRepository employeeRepository;
 
-    public EmployeeDTO saveEmployee(EmployeeDTO employeeDTO) {
+    public EmployeeDTO saveEmployee(Employee employeeDTO) {
         Employee employee = convertToEntity(employeeDTO);
         employee.generateVerificationCode();  // Generate code in entity
         Employee savedEmployee = employeeRepository.save(employee);
@@ -82,7 +82,7 @@ public class EmployeeService {
         }
     }
 
-    private Employee convertToEntity(EmployeeDTO dto) {
+    private Employee convertToEntity(Employee dto) {
         Employee employee = new Employee();
         employee.setId(dto.getId());
         employee.setUsername(dto.getUsername());
