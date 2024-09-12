@@ -68,11 +68,11 @@ public class AuthController {
             return new ResponseEntity<>("Phone number is already registered", HttpStatus.BAD_REQUEST);
         }
         Employee employee = new Employee();
-        EmployeeDTO employeeDTO = new EmployeeDTO();
-        employeeDTO.setUsername(registerDto.getUsername());
-        employeeDTO.setPassword(passwordEncoder.encode(registerDto.getPassword()));
-        employeeDTO.setPhoneNumber(registerDto.getPhoneNumber());
-        employeeDTO.setEmail(registerDto.getEmail());
+
+        employee.setUsername(registerDto.getUsername());
+        employee.setPassword(passwordEncoder.encode(registerDto.getPassword()));
+        employee.setPhoneNumber(registerDto.getPhoneNumber());
+        employee.setEmail(registerDto.getEmail());
 
         // Generate verification code and set verification time
 
