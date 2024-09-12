@@ -46,4 +46,16 @@ public class RoomsService {
             throw new RuntimeException("Failed to delete room with ID: " + id, e);
         }
     }
+
+    // Logic to update room availability when a booking is made
+    public void updateRoomAvailability(Long roomId, boolean isAvailable) {
+        Optional<Rooms> roomOpt = roomsRepository.findById(roomId);
+        if (roomOpt.isPresent()) {
+            Rooms room = roomOpt.get();
+            room.setAvailable(isAvailable);
+            roomsRepository.save(room);
+        } else {
+            throw new RuntimeException("Room not found with ID: " + roomId);
+        }
+    }
 }

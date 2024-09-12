@@ -2,8 +2,8 @@ package HotelManagement.model;
 
 
 import HotelManagement.dto.LoginDto;
+import HotelManagement.employee.Employee;
 import HotelManagement.jwt.JwtService;
-import HotelManagement.model.Employee;
 import HotelManagement.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

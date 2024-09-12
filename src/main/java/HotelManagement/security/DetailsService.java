@@ -1,8 +1,8 @@
 package HotelManagement.security;
 
-import HotelManagement.model.Employee;
-import HotelManagement.model.Role;
+import HotelManagement.employee.Employee;
 import HotelManagement.repository.EmployeeRepository;
+import HotelManagement.roles.Erole; // Import your custom role class
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -34,9 +34,10 @@ public class DetailsService implements UserDetailsService {
         return new User(user.getUsername(), user.getPassword(), mapRolesToAuthorities(user.getRoles()));
     }
 
-    private Collection<GrantedAuthority> mapRolesToAuthorities(List<Role> roles) {
+    private Collection<GrantedAuthority> mapRolesToAuthorities(List<Erole> roles) {
         return roles.stream()
-                .map(role -> new SimpleGrantedAuthority(role.getName()))
+                .map(role -> new SimpleGrantedAuthority(role.name())) // Use role.name() to get the string representation
                 .collect(Collectors.toList());
     }
+
 }

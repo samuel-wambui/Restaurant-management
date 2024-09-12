@@ -5,10 +5,10 @@ import HotelManagement.EmailApp.Model;
 import HotelManagement.dto.ForgotPasswordDto;
 import HotelManagement.dto.LoginDto;
 import HotelManagement.dto.RegisterDto;
-import HotelManagement.model.Employee;
-import HotelManagement.model.EmployeeService;
+import HotelManagement.employee.Employee;
+import HotelManagement.employee.EmployeeDTO;
+import HotelManagement.employee.EmployeeService;
 import HotelManagement.repository.EmployeeRepository;
-import HotelManagement.repository.RoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,9 +37,6 @@ public class AuthController {
     private EmployeeRepository employeeRepository;
 
     @Autowired
-    private RoleRepository roleRepository;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -57,28 +54,36 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody RegisterDto registerDto) {
         if (employeeRepository.existsByUsernameAndDeletedFlag("N", registerDto.getUsername())) {
+
             return new ResponseEntity<>("Username is already taken", HttpStatus.BAD_REQUEST);
         }
         if (employeeRepository.existsByPhoneNumberAndDeletedFlag("N", registerDto.getPhoneNumber())) {
             return new ResponseEntity<>("Phone number is already registered", HttpStatus.BAD_REQUEST);
+
         }
         if (employeeRepository.existsByEmailAndDeletedFlag("N", registerDto.getEmail())) {
             return new ResponseEntity<>("Email is already registered", HttpStatus.BAD_REQUEST);
         }
-
+        if (employeeRepository.existsByPhoneNumberAndDeletedFlag("N", registerDto.getPhoneNumber())) {
+            return new ResponseEntity<>("Phone number is already registered", HttpStatus.BAD_REQUEST);
+        }
         Employee employee = new Employee();
-        employee.setUsername(registerDto.getUsername());
-        employee.setPassword(passwordEncoder.encode(registerDto.getPassword()));
-        employee.setPhoneNumber(registerDto.getPhoneNumber());
-        employee.setEmail(registerDto.getEmail());
+        EmployeeDTO employeeDTO = new EmployeeDTO();
+        employeeDTO.setUsername(registerDto.getUsername());
+        employeeDTO.setPassword(passwordEncoder.encode(registerDto.getPassword()));
+        employeeDTO.setPhoneNumber(registerDto.getPhoneNumber());
+        employeeDTO.setEmail(registerDto.getEmail());
 
         // Generate verification code and set verification time
+
         employee.generateVerificationCode();
+<<<<<<< HEAD
         employeeRepository.save(employee);
 
         // Send verification email
         String toEmail = employee.getEmail();
         String text = "Hello " + employee.getUsername() + ", your verification code is " + employee.getVerificationCode() + ".";
+
         emailSender.sendEmailWithVerificationCode(toEmail, model.getSubject(), text);
         System.out.println(text);
 
@@ -87,10 +92,12 @@ public class AuthController {
 
     @PostMapping("/verify")
     public ResponseEntity<String> verifyEmployee(@RequestParam Long id, @RequestParam String verificationCode) {
+
         Optional<Employee> optionalEmployee = employeeRepository.findByIdAndDeletedFlag(id, "N");
 
         if (optionalEmployee.isEmpty()) {
             return ResponseEntity.badRequest().body("Employee not found");
+
         }
 
         Employee employee = optionalEmployee.get();
@@ -156,9 +163,11 @@ public class AuthController {
             int remainingAttempts = MAX_LOGIN_ATTEMPTS - loginAttempts.get(username);
 
             if (remainingAttempts <= 0) {
+<<<<<<< HEAD
                 employee.setLockedFlag(true);
                 employeeRepository.save(employee);
                 return ResponseEntity.status(HttpStatus.LOCKED).body("Account locked due to too many failed login attempts.");
+
             }
 
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -173,8 +182,10 @@ public class AuthController {
     public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordDto forgotPasswordDto) {
         Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndDeletedFlag("N", forgotPasswordDto.getUsername());
 
+
         if (optionalEmployee.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Employee not found or verification failed.");
+
         }
 
         Employee employee = optionalEmployee.get();
@@ -193,8 +204,10 @@ public class AuthController {
     public ResponseEntity<String> verifyForgotPassword(@RequestParam String username, @RequestParam String verificationCode) {
         Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndDeletedFlag("N", username);
 
+
         if (optionalEmployee.isEmpty()) {
             return ResponseEntity.badRequest().body("Employee not found.");
+
         }
 
         Employee employee = optionalEmployee.get();
