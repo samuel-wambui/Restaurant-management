@@ -29,7 +29,7 @@ public class DetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // Adjusted to check for "N" (not deleted) in the deletedFlag
-        Employee user = employeeRepository.findByUsernameAndDeletedFlag("N", username)
+        Employee user = employeeRepository.findByUsernameAndDeletedFlag(username,"N")
                 .orElseThrow(() -> new UsernameNotFoundException("Username not found"));
         return new User(user.getUsername(), user.getPassword(), mapRolesToAuthorities(user.getRoles()));
     }

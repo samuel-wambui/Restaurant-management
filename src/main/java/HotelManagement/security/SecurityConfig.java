@@ -9,7 +9,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UserDetailsPasswordService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -19,10 +18,9 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final DetailsService detailsService;
-    private final UserDetailsPasswordService userDetailsPasswordService;
+    private final CustomUserDetailsPasswordService userDetailsPasswordService;
 
-
-    public SecurityConfig(DetailsService detailsService, UserDetailsPasswordService userDetailsPasswordService) {
+    public SecurityConfig(DetailsService detailsService, CustomUserDetailsPasswordService userDetailsPasswordService) {
         this.detailsService = detailsService;
         this.userDetailsPasswordService = userDetailsPasswordService;
     }
@@ -38,18 +36,16 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/verification/send-email",
-                                "/api/auth/register",
-                                "/api/**",
+                                "/auth/register",
+                                "/api/auth/**",
                                 "/api/users**",
                                 "/verification**",
-                                "/user",
-                                "/auth**"
+                                "/user"
                         ).permitAll()
                         .anyRequest().authenticated()
                 );
         return httpSecurity.build();
     }
-
 
     @Bean
     public AuthenticationProvider authenticationProvider() {
@@ -60,15 +56,13 @@ public class SecurityConfig {
         return authenticationProvider;
     }
 
-
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
-
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);
+        return new BCryptPasswordEncoder(12); // Strength of 12 for BCrypt
     }
 }
