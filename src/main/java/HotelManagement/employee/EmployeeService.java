@@ -1,141 +1,141 @@
 package HotelManagement.employee;
 
+
+import HotelManagement.dto.LoginDto;
+import HotelManagement.jwt.JwtService;
 import HotelManagement.repository.EmployeeRepository;
-import HotelManagement.roles.Erole;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Random;
 
 @Service
 public class EmployeeService {
 
     @Autowired
     private EmployeeRepository employeeRepository;
+    @Autowired
+    private AuthenticationManager authenticationManager;
+    @Autowired
+    private JwtService jwtService;
 
-    public EmployeeDTO saveEmployee(Employee employeeDTO) {
-        Employee employee = convertToEntity(employeeDTO);
-        employee.generateVerificationCode();  // Generate code in entity
-        Employee savedEmployee = employeeRepository.save(employee);
-        return convertToDTO(savedEmployee);
+
+    public Employee saveEmployee(Employee employee) {
+        return employeeRepository.save(employee);
     }
 
-    public Optional<EmployeeDTO> findById(Long id) {
-        return employeeRepository.findById(id)
-                .map(this::convertToDTO);
+    public Optional<Employee> findById(long id) {
+        return employeeRepository.findById(id);
     }
 
-    public EmployeeDTO updateEmployee(EmployeeDTO employeeDTO) {
-        Employee employee = convertToEntity(employeeDTO);
-        Employee updatedEmployee = employeeRepository.save(employee);
-        return convertToDTO(updatedEmployee);
+//    public Optional<Employee> findByUsername(String username) {
+//        return employeeRepository.findByUsername(username);
+//    }
+
+    public Employee updateEmployee(Employee employee) {
+        return employeeRepository.save(employee);
     }
 
-    public void deleteEmployee(Long id) {
+    public void deleteEmployee(long id) {
         employeeRepository.deleteById(id);
     }
 
-    public List<EmployeeDTO> findAllEmployees() {
-        return employeeRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+    public String generateVerificationCode(long id) {
+        Optional<Employee> employee = employeeRepository.findById(id);
+        if (employee.isPresent()) {
+            Employee emp = employee.get();
+            emp.generateVerificationCode();
+            employeeRepository.save(emp);
+            return emp.getVerificationCode();
+        }
+        return null;
     }
 
-    public List<EmployeeDTO> getEmployeesBySupervisor(Long supervisorId) {
-        Employee supervisor = employeeRepository.findById(supervisorId)
-                .orElseThrow(() -> new RuntimeException("Supervisor not found"));
+    public boolean verifyCode(long id, String code) {
+        Optional<Employee> employee = employeeRepository.findById(id);
+        if (employee.isPresent()) {
+            Employee emp = employee.get();
+            return emp.verifyCode(code);
+        }
+        return false;
+    }
 
-        if (supervisor.getRoles().contains(Erole.ROLE_SUPERVISOR)) {
-            return supervisor.getSupervisedEmployees().stream()
-                    .map(this::convertToDTO)
-                    .collect(Collectors.toList());
-        } else {
-            throw new RuntimeException("The supervisor role is required to retrieve supervised employees");
+    public String generateResetPasswordVerificationCode(long id) {
+        Optional<Employee> employee = employeeRepository.findById(id);
+        if (employee.isPresent()) {
+            Employee emp = employee.get();
+            return emp.generateResetPasswordVerificationCode();
+        }
+        return null;
+    }
+
+    public boolean validateResetPasswordCode(long id, String code) {
+        Optional<Employee> employee = employeeRepository.findById(id);
+        if (employee.isPresent()) {
+            Employee emp = employee.get();
+            return emp.validateResetPasswordCode(code);
+        }
+        return false;
+    }
+
+    public void setEmployeeVerified(long id, boolean isVerified) {
+        Optional<Employee> employee = employeeRepository.findById(id);
+        if (employee.isPresent()) {
+            Employee emp = employee.get();
+            emp.setVerifiedFlag(isVerified);
+            employeeRepository.save(emp);
         }
     }
 
-    public void assignSupervisedEmployee(Long supervisorId, Long employeeId) {
-        Employee supervisor = employeeRepository.findById(supervisorId)
-                .orElseThrow(() -> new RuntimeException("Supervisor not found"));
-        Employee employee = employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
-
-        if (supervisor.getRoles().contains(Erole.ROLE_SUPERVISOR)) {
-            supervisor.addSupervisedEmployee(employee);
-            employeeRepository.save(supervisor);
-        } else {
-            throw new RuntimeException("The supervisor role is required to assign employees");
+    public void setEmployeeLocked(long id, boolean isLocked) {
+        Optional<Employee> employee = employeeRepository.findById(id);
+        if (employee.isPresent()) {
+            Employee emp = employee.get();
+            emp.setLockedFlag(isLocked);
+            employeeRepository.save(emp);
         }
     }
 
-    public void assignShiftToSupervisor(Long id, String shiftSchedule) {
-        Employee supervisor = employeeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Supervisor not found"));
-
-        if (supervisor.getRoles().contains(Erole.ROLE_SUPERVISOR)) {
-            supervisor.assignShiftSchedule(shiftSchedule);
-            employeeRepository.save(supervisor);
-        } else {
-            throw new RuntimeException("The supervisor role is required to assign shift schedules");
+    public void setEmployeeDeleted(long id, boolean isDeleted) {
+        Optional<Employee> employee = employeeRepository.findById(id);
+        if (employee.isPresent()) {
+            Employee emp = employee.get();
+            emp.setDeletedFlag(isDeleted);
+            employeeRepository.save(emp);
         }
     }
 
-    private Employee convertToEntity(Employee dto) {
-        Employee employee = new Employee();
-        employee.setId(dto.getId());
-        employee.setUsername(dto.getUsername());
-        employee.setPhoneNumber(dto.getPhoneNumber());
-        employee.setEmail(dto.getEmail());
-        employee.setPassword(dto.getPassword()); // This should be handled securely in real scenarios
-        employee.setVerificationCode(dto.getVerificationCode());
-        employee.setVerificationTime(dto.getVerificationTime());
-        employee.setVerifiedFlag(dto.getVerifiedFlag());
-        employee.setLockedFlag(dto.getLockedFlag());
-        employee.setResetPasswordVerification(dto.getResetPasswordVerification());
-        employee.setResetVerificationTime(dto.getResetVerificationTime());
-        employee.setDeletedFlag(dto.getDeletedFlag());
-        employee.setRoles(dto.getRoles());
-        employee.setAssignedTables(dto.getAssignedTables());
-        employee.setShiftStartTime(dto.getShiftStartTime());
-        employee.setShiftEndTime(dto.getShiftEndTime());
-        employee.setSupervisedEmployees(dto.getSupervisedEmployees().stream()
-                .map(this::convertToEntity)
-                .collect(Collectors.toList()));
-        employee.setShiftSchedule(dto.getShiftSchedule());
-        return employee;
+    private String generateCode(int length) {
+        final String CODE_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        Random random = new Random();
+        StringBuilder codeBuilder = new StringBuilder(length);
+
+        for (int i = 0; i < length; i++) {
+            int randomIndex = random.nextInt(CODE_CHARACTERS.length());
+            codeBuilder.append(CODE_CHARACTERS.charAt(randomIndex));
+        }
+
+        return codeBuilder.toString();
     }
 
-    private EmployeeDTO convertToDTO(Employee employee) {
-        EmployeeDTO dto = new EmployeeDTO();
-        dto.setId(employee.getId());
-        dto.setUsername(employee.getUsername());
-        dto.setPhoneNumber(employee.getPhoneNumber());
-        dto.setEmail(employee.getEmail());
-        dto.setPassword(employee.getPassword());
-        dto.setVerificationCode(employee.getVerificationCode());
-        dto.setVerificationTime(employee.getVerificationTime());
-        dto.setVerifiedFlag(employee.getVerifiedFlag());
-        dto.setLockedFlag(employee.getLockedFlag());
-        dto.setResetPasswordVerification(employee.getResetPasswordVerification());
-        dto.setResetVerificationTime(employee.getResetVerificationTime());
-        dto.setDeletedFlag(employee.getDeletedFlag());
-        dto.setRoles(employee.getRoles());
-        dto.setAssignedTables(employee.getAssignedTables());
-        dto.setShiftStartTime(employee.getShiftStartTime());
-        dto.setShiftEndTime(employee.getShiftEndTime());
-        dto.setSupervisedEmployees(employee.getSupervisedEmployees().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList()));
-        dto.setShiftSchedule(employee.getShiftSchedule());
-        return dto;
+    public ResponseEntity<String> verify(LoginDto loginDto) {
+        Authentication authentication =
+                authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword()));
+
+        if (authentication.isAuthenticated()) {
+
+            String token = jwtService.generateTocken(loginDto.getUsername());
+            System.out.println("jwt :" + token);
+            return ResponseEntity.ok(token);
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("fail");
+        }
     }
 
-    public boolean verifyCode(Long id, String verificationCode) {
-        Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Employee not found"));
-
-        return employee.verifyCode(verificationCode);
-    }
 }
