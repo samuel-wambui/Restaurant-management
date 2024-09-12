@@ -77,7 +77,7 @@ public class AuthController {
         // Generate verification code and set verification time
 
         employee.generateVerificationCode();
-<<<<<<< HEAD
+
         employeeRepository.save(employee);
 
         // Send verification email
@@ -163,7 +163,7 @@ public class AuthController {
             int remainingAttempts = MAX_LOGIN_ATTEMPTS - loginAttempts.get(username);
 
             if (remainingAttempts <= 0) {
-<<<<<<< HEAD
+
                 employee.setLockedFlag(true);
                 employeeRepository.save(employee);
                 return ResponseEntity.status(HttpStatus.LOCKED).body("Account locked due to too many failed login attempts.");

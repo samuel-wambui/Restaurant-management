@@ -1,13 +1,12 @@
 package HotelManagement.employee;
 
-import HotelManagement.roles.Erole;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import javax.management.relation.Role;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
@@ -19,28 +18,26 @@ import java.util.Random;
 @NoArgsConstructor
 @Table(name = "users")
 public class Employee {
-
  @Id
  @GeneratedValue(strategy = GenerationType.IDENTITY)
  private long id;
 
- @Column(name = "username", nullable = false)
+ @Column(name = "username")
  private String username;
 
- @Column(name = "phone_number", nullable = false)
+ @Column(name = "phone_number")
  private String phoneNumber;
 
- @Column(name = "email", nullable = false)
+ @Column(name = "email")
  private String email;
 
- @Column(name = "password", nullable = false)
+ @Column(name = "password")
  private String password;
 
  @Column(name = "verification_code")
  private String verificationCode;
 
  @Column(name = "verification_time")
- @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
  private LocalDateTime verificationTime;
 
  @Column(name = "verified_flag", nullable = false)
@@ -53,111 +50,83 @@ public class Employee {
  private String resetPasswordVerification;
 
  @Column(name = "reset_verification_time")
- @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
  private LocalDateTime resetVerificationTime;
 
  @Column(name = "deleted_flag", nullable = false)
  private String deletedFlag = "N";
 
- @ElementCollection(targetClass = Erole.class)
- @Enumerated(EnumType.STRING)
- @CollectionTable(name = "employee_roles", joinColumns = @JoinColumn(name = "employee_id"))
- @Column(name = "role")
- private List<Erole> roles;
+ @ManyToMany
+ @JoinTable(
+         name = "employee_roles",
+         joinColumns = @JoinColumn(name = "employee_id"),
+         inverseJoinColumns = @JoinColumn(name = "role_id") // should match with Role id type
+ )
+ private List<Role> roles;
 
- @Column(name = "assigned_tables")
- private String assignedTables;  // Waiter's assigned tables
-
- @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
- @Column(name = "shift_start_time")
- private LocalDateTime shiftStartTime;
-
- @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS")
- @Column(name = "shift_end_time")
- private LocalDateTime shiftEndTime;
-
- @OneToMany
- @JoinColumn(name = "supervised_employees")
- private List<Employee> supervisedEmployees;  // Employees under supervisor's management
-
- @Column(name = "shift_schedule")
- private String shiftSchedule;  // Supervisor's shift schedule
-
- // Constructor for creating new employees without extra fields
- public Employee(String username, String phoneNumber, String email, String password, List<Erole> roles) {
+ public Employee(String username, String phoneNumber, String email, String password) {
   this.username = username;
   this.phoneNumber = phoneNumber;
   this.email = email;
   this.password = password;
-  this.roles = roles;
   this.verifiedFlag = "N";
   this.deletedFlag = "N";
   this.lockedFlag = "N";
   generateVerificationCode();
+  generateResetPasswordVerificationCode();
  }
 
+ private String generateCode(int length) {
+  final String CODE_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  Random random = new Random();
+  StringBuilder codeBuilder = new StringBuilder(length);
 
+  for (int i = 0; i < length; i++) {
+   int randomIndex = random.nextInt(CODE_CHARACTERS.length());
+   codeBuilder.append(CODE_CHARACTERS.charAt(randomIndex));
+  }
 
- // Automatically generates a 6-character verification code
+  return codeBuilder.toString();
+ }
+
  public void generateVerificationCode() {
   this.verificationCode = generateCode(6);
   this.verificationTime = LocalDateTime.now();
  }
 
- // Generates a reset password code
+ public boolean verifyCode(String code) {
+  if (verificationCode.equals(code)) {
+   LocalDateTime currentTime = LocalDateTime.now();
+   LocalDateTime expiryTime = verificationTime.plusMinutes(5);
+   return currentTime.isBefore(expiryTime);
+  }
+  return false;
+ }
+
  public String generateResetPasswordVerificationCode() {
   this.resetPasswordVerification = generateCode(6);
   this.resetVerificationTime = LocalDateTime.now();
   return this.resetPasswordVerification;
  }
 
- // Verifies if the provided code matches the stored one and is still valid (within 5 minutes)
- public boolean verifyCode(String code) {
-  if (verificationCode.equals(code)) {
+ public boolean validateResetPasswordCode(String code) {
+  if (resetPasswordVerification.equals(code)) {
    LocalDateTime currentTime = LocalDateTime.now();
-   return currentTime.isBefore(verificationTime.plusMinutes(5));
+   LocalDateTime expiryTime = resetVerificationTime.plusMinutes(5);
+   return currentTime.isBefore(expiryTime);
   }
   return false;
  }
 
- // Method to assign tables to a waiter
- public void assignTables(String tables) {
-  this.assignedTables = tables;
+ public void setVerifiedFlag(boolean isVerified) {
+  this.verifiedFlag = isVerified ? "Y" : "N";
  }
 
- // Method to set shift times for waiters
- public void setShiftTimes(LocalDateTime start, LocalDateTime end) {
-  this.shiftStartTime = start;
-  this.shiftEndTime = end;
+ public void setLockedFlag(boolean isLocked) {
+  this.lockedFlag = isLocked ? "Y" : "N";
  }
 
- // Method to determine if the waiter is on shift
- public boolean isOnShift(LocalDateTime currentTime) {
-  return currentTime.isAfter(shiftStartTime) && currentTime.isBefore(shiftEndTime);
+ public void setDeletedFlag(boolean isDeleted) {
+  this.deletedFlag = isDeleted ? "Y" : "N";
  }
 
- // Method to manage supervised employees for supervisors
- public void addSupervisedEmployee(Employee employee) {
-  this.supervisedEmployees.add(employee);
- }
-
- public void removeSupervisedEmployee(Employee employee) {
-  this.supervisedEmployees.remove(employee);
- }
-
- public void assignShiftSchedule(String schedule) {
-  this.shiftSchedule = schedule;
- }
-
- // Utility method to generate a random code
- private String generateCode(int length) {
-  final String CODE_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  Random random = new Random();
-  StringBuilder codeBuilder = new StringBuilder(length);
-  for (int i = 0; i < length; i++) {
-   int randomIndex = random.nextInt(CODE_CHARACTERS.length());
-   codeBuilder.append(CODE_CHARACTERS.charAt(randomIndex));
-  }
-  return codeBuilder.toString();
- }
 }
