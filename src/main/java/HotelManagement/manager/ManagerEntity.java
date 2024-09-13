@@ -27,7 +27,7 @@ public class ManagerEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Erole role = Erole.ROLE_MANAGER;
+    private Erole role = Erole.MANAGER;
 
     @Column(nullable = false, unique = true)
     private String email;

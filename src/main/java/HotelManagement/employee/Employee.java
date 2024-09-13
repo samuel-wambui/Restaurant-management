@@ -1,15 +1,20 @@
 package HotelManagement.employee;
 
-import HotelManagement.employee.Role;
+import HotelManagement.roles.Erole;
+import HotelManagement.roles.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Component
 @Data
@@ -17,21 +22,22 @@ import java.util.Random;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "users")
-public class Employee {
+public class Employee implements UserDetails {
+
  @Id
  @GeneratedValue(strategy = GenerationType.IDENTITY)
  private long id;
 
- @Column(name = "username")
+ @Column(name = "username", nullable = false)
  private String username;
 
- @Column(name = "phone_number")
+ @Column(name = "phone_number", nullable = false)
  private String phoneNumber;
 
- @Column(name = "email")
+ @Column(name = "email", nullable = false)
  private String email;
 
- @Column(name = "password")
+ @Column(name = "password", nullable = false)
  private String password;
 
  @Column(name = "verification_code")
@@ -55,13 +61,51 @@ public class Employee {
  @Column(name = "deleted_flag", nullable = false)
  private String deletedFlag = "N";
 
- @ManyToMany
+ @ManyToMany(fetch = FetchType.EAGER)
  @JoinTable(
          name = "employee_roles",
          joinColumns = @JoinColumn(name = "employee_id"),
-         inverseJoinColumns = @JoinColumn(name = "role_id") // should match with Role id type
+         inverseJoinColumns = @JoinColumn(name = "role_id")
  )
- private List<Role> roles;
+ private List<Role> role;
+
+ @Override
+ public Collection<? extends GrantedAuthority> getAuthorities() {
+  return role.stream()
+          .flatMap(r -> r.getAuthorities().stream())
+          .collect(Collectors.toList());
+ }
+
+ // Other UserDetails interface methods
+ @Override
+ public String getPassword() {
+  return password;
+ }
+
+ @Override
+ public String getUsername() {
+  return username;
+ }
+
+ @Override
+ public boolean isAccountNonExpired() {
+  return true;
+ }
+
+ @Override
+ public boolean isAccountNonLocked() {
+  return !lockedFlag.equals("Y");
+ }
+
+ @Override
+ public boolean isCredentialsNonExpired() {
+  return true;
+ }
+
+ @Override
+ public boolean isEnabled() {
+  return !deletedFlag.equals("Y");
+ }
 
  public Employee(String username, String phoneNumber, String email, String password) {
   this.username = username;
@@ -128,5 +172,4 @@ public class Employee {
  public void setDeletedFlag(boolean isDeleted) {
   this.deletedFlag = isDeleted ? "Y" : "N";
  }
-
 }

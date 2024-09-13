@@ -1,11 +1,10 @@
 package HotelManagement.security;
 
 import HotelManagement.employee.Employee;
-import HotelManagement.employee.Role;
 import HotelManagement.repository.EmployeeRepository;
+import HotelManagement.roles.Role;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -29,14 +28,17 @@ public class DetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // Adjusted to check for "N" (not deleted) in the deletedFlag
-        Employee user = employeeRepository.findByUsernameAndDeletedFlag(username,"N")
+        Employee employee = employeeRepository.findByUsernameAndDeletedFlag(username, "N")
                 .orElseThrow(() -> new UsernameNotFoundException("Username not found"));
-        return new User(user.getUsername(), user.getPassword(), mapRolesToAuthorities(user.getRoles()));
+
+        // Mapping roles to authorities (permissions)
+        return new User(employee.getUsername(), employee.getPassword(), mapRolesToAuthorities(employee.getRole()));
     }
 
+    // Adjusted to work with the Erole enum for authorities
     private Collection<GrantedAuthority> mapRolesToAuthorities(List<Role> roles) {
         return roles.stream()
-                .map(role -> new SimpleGrantedAuthority(role.getName()))
+                .flatMap(role -> role.getAuthorities().stream())
                 .collect(Collectors.toList());
     }
 }

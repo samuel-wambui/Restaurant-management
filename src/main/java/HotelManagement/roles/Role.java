@@ -1,14 +1,18 @@
-package HotelManagement.employee;
+package HotelManagement.roles;
 
-
+import HotelManagement.employee.Permissions;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @AllArgsConstructor
@@ -18,20 +22,22 @@ import java.util.Date;
 @Table(name = "roles")
 public class Role {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Use IDENTITY for auto-increment
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(length = 20, nullable = false, unique = true)
     private String name;
 
-    // Operational Audit
+    @ElementCollection(targetClass = Permissions.class, fetch = FetchType.EAGER)
+    @Enumerated(EnumType.STRING)
+    @CollectionTable(name = "role_permissions", joinColumns = @JoinColumn(name = "role_id"))
+    @Column(name = "permission")
+    private Set<Permissions> permissions;
+
+    // Operational Audit fields
     @Column(length = 30, nullable = false)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String postedBy;
-
-    @Column(nullable = false)
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Character postedFlag = 'Y';
 
     @Column(nullable = false)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
@@ -41,16 +47,10 @@ public class Role {
     private String modifiedBy;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Character modifiedFlag = 'N';
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Date modifiedTime;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String verifiedBy;
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Character verifiedFlag = 'N';
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Date verifiedTime;
@@ -59,8 +59,14 @@ public class Role {
     private String deletedBy;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    private Character deletedFlag = 'N';
-
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Date deletedTime;
+
+    // Convert Role to Spring Security authorities
+    public List<SimpleGrantedAuthority> getAuthorities() {
+        List<SimpleGrantedAuthority> authorities = permissions.stream()
+                .map(permission -> new SimpleGrantedAuthority(permission.name()))
+                .collect(Collectors.toList());
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + this.name));
+        return authorities;
+    }
 }

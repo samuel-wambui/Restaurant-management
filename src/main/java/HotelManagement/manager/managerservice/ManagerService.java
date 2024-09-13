@@ -37,7 +37,7 @@ public class ManagerService {
             manager.setPassword(managerDto.getPassword());
             manager.setEmail(managerDto.getEmail());
             manager.setPhoneNumber(managerDto.getPhoneNumber());
-            manager.setRole(Erole.ROLE_MANAGER);
+            manager.setRole(Erole.MANAGER);
 
             return managerRepository.save(manager);
         } catch (Exception e) {
