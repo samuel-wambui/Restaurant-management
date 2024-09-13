@@ -30,7 +30,7 @@ import java.util.function.Function;
 
 @Service
 public class JwtService {
-    private String secretKey;
+  private final String secretKey;
 
     private JwtService() {
         try {
@@ -62,6 +62,7 @@ public class JwtService {
         byte[] keyBites = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBites);
     }
+
     public String extractUserName(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -98,38 +99,4 @@ public class JwtService {
     }
 
 
-
-    @Component  // Registering JwtFilter as a Spring Bean
-    public static class JwtFilter extends OncePerRequestFilter {
-
-        @Autowired
-        private JwtService jwtService;
-
-        @Autowired
-        private UserDetailsService userDetailsService;
-
-        @Override
-        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-            String authHeader = request.getHeader("Authorization");
-            String token = null;
-            String username = null;
-
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                token = authHeader.substring(7);
-                username = jwtService.extractUserName(token);
-            }
-
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-                if (jwtService.validateToken(token, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
-            }
-
-            filterChain.doFilter(request, response);  // Don't forget to continue the filter chain
-        }
-    }
 }

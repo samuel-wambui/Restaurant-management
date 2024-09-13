@@ -1,5 +1,6 @@
 package HotelManagement.security;
 
+import HotelManagement.jwt.JwtFilter;
 import HotelManagement.jwt.JwtService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,12 +19,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 public class SecurityConfig {
 
-    private final JwtService.JwtFilter jwtFilter;  // Injecting the JwtFilter
+    private final JwtFilter jwtFilter;  // Injecting the JwtFilter
 
     private final DetailsService detailsService;
     private final CustomUserDetailsPasswordService userDetailsPasswordService;
 
-    public SecurityConfig(JwtService.JwtFilter jwtFilter, DetailsService detailsService, CustomUserDetailsPasswordService userDetailsPasswordService) {
+    public SecurityConfig(JwtFilter jwtFilter, DetailsService detailsService, CustomUserDetailsPasswordService userDetailsPasswordService) {
         this.jwtFilter = jwtFilter;  // Assign the JwtFilter
         this.detailsService = detailsService;
         this.userDetailsPasswordService = userDetailsPasswordService;
