@@ -18,7 +18,7 @@ import java.util.function.Function;
 
 @Service
 public class JwtService {
-    private String secretKey;
+  private final String secretKey;
 
     private JwtService() {
         try {
@@ -50,6 +50,7 @@ public class JwtService {
         byte[] keyBites = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBites);
     }
+
     public String extractUserName(String token) {
         return extractClaim(token, Claims::getSubject);
     }

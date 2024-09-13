@@ -2,6 +2,7 @@ package HotelManagement.security;
 
 import HotelManagement.jwt.JwtFilter;
 import HotelManagement.jwt.JwtService;
+import jakarta.servlet.Filter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,7 +22,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private JwtFilter jwtFilter;  // Injecting the JwtFilter
+
+    private final JwtFilter jwtFilter;  // Injecting the JwtFilter
+
 
     private final DetailsService detailsService;
     private final CustomUserDetailsPasswordService userDetailsPasswordService;
@@ -52,7 +55,7 @@ public class SecurityConfig {
                                 "/api/roles/**"
                         ).permitAll()
                         .anyRequest().authenticated())
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore((Filter) jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return httpSecurity.build();
     }
