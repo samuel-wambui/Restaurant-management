@@ -1,5 +1,6 @@
 package HotelManagement.security;
 
+import HotelManagement.jwt.JwtFilter;
 import HotelManagement.jwt.JwtService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,6 +8,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -16,20 +18,22 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @EnableWebSecurity
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
 
-    private final JwtService.JwtFilter jwtFilter;  // Injecting the JwtFilter
+    private JwtFilter jwtFilter;  // Injecting the JwtFilter
 
     private final DetailsService detailsService;
     private final CustomUserDetailsPasswordService userDetailsPasswordService;
 
-    public SecurityConfig(JwtService.JwtFilter jwtFilter, DetailsService detailsService, CustomUserDetailsPasswordService userDetailsPasswordService) {
+    public SecurityConfig(JwtFilter jwtFilter, DetailsService detailsService, CustomUserDetailsPasswordService userDetailsPasswordService) {
         this.jwtFilter = jwtFilter;  // Assign the JwtFilter
         this.detailsService = detailsService;
         this.userDetailsPasswordService = userDetailsPasswordService;
     }
 
     // SecurityFilterChain configuration
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
@@ -42,13 +46,13 @@ public class SecurityConfig {
                                 "/verification/send-email",
                                 "/auth/register",
                                 "/api/auth/**",
-                                "/api/users**",
-                                "/verification**",
+                                "/api/users/**",
+                                "/verification/**",
                                 "/user",
                                 "/api/roles/**"
                         ).permitAll()
                         .anyRequest().authenticated())
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);  // Adding the JwtFilter
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return httpSecurity.build();
     }
