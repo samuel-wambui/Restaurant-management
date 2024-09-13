@@ -4,6 +4,7 @@ import HotelManagement.roles.Erole;
 import HotelManagement.roles.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Table(name = "users")
 public class Employee implements UserDetails {
 
@@ -132,10 +134,13 @@ public class Employee implements UserDetails {
   return codeBuilder.toString();
  }
 
- public void generateVerificationCode() {
+ // Generate and set the verification code and time
+ public String generateVerificationCode() {
   this.verificationCode = generateCode(6);
   this.verificationTime = LocalDateTime.now();
+  return this.verificationCode; // Return the generated code
  }
+
 
  public boolean verifyCode(String code) {
   if (verificationCode.equals(code)) {

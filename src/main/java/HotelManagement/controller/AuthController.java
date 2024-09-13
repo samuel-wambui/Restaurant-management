@@ -4,17 +4,15 @@ import HotelManagement.EmailApp.EmailSender;
 import HotelManagement.EmailApp.Model;
 import HotelManagement.dto.ForgotPasswordDto;
 import HotelManagement.dto.LoginDto;
-import HotelManagement.dto.RegisterDto;
 import HotelManagement.employee.Employee;
-import HotelManagement.employee.EmployeeDTO;
 import HotelManagement.employee.EmployeeService;
+import HotelManagement.jwt.JwtService;
 import HotelManagement.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -44,6 +43,8 @@ public class AuthController {
 
     @Autowired
     private Model model;
+    @Autowired
+    JwtService jwtService;
 
     @Autowired
     private EmployeeService employeeService;
@@ -52,43 +53,52 @@ public class AuthController {
     private final int MAX_LOGIN_ATTEMPTS = 3;
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody RegisterDto registerDto) {
-        if (employeeRepository.existsByUsernameAndDeletedFlag("N", registerDto.getUsername())) {
+    public ResponseEntity<Map<String, String>> register(@RequestBody Employee registerDto) {
+        // Check if the username already exists and is not marked as deleted
+        if (employeeRepository.existsByUsernameAndDeletedFlag(registerDto.getUsername(), "N")) {
+            return new ResponseEntity<>(Map.of("message", "Username is already taken"), HttpStatus.BAD_REQUEST);
+        }
 
-            return new ResponseEntity<>("Username is already taken", HttpStatus.BAD_REQUEST);
+        // Check if the phone number already exists and is not marked as deleted
+        if (employeeRepository.existsByPhoneNumberAndDeletedFlag(registerDto.getPhoneNumber(), "N")) {
+            return new ResponseEntity<>(Map.of("message", "Phone number is already registered"), HttpStatus.BAD_REQUEST);
         }
-        if (employeeRepository.existsByPhoneNumberAndDeletedFlag("N", registerDto.getPhoneNumber())) {
-            return new ResponseEntity<>("Phone number is already registered", HttpStatus.BAD_REQUEST);
 
+        // Check if the email already exists and is not marked as deleted
+        if (employeeRepository.existsByEmailAndDeletedFlag(registerDto.getEmail(), "N")) {
+            return new ResponseEntity<>(Map.of("message", "Email is already registered"), HttpStatus.BAD_REQUEST);
         }
-        if (employeeRepository.existsByEmailAndDeletedFlag("N", registerDto.getEmail())) {
-            return new ResponseEntity<>("Email is already registered", HttpStatus.BAD_REQUEST);
-        }
-        if (employeeRepository.existsByPhoneNumberAndDeletedFlag("N", registerDto.getPhoneNumber())) {
-            return new ResponseEntity<>("Phone number is already registered", HttpStatus.BAD_REQUEST);
-        }
+
+        // Create a new employee and set the details
         Employee employee = new Employee();
-
         employee.setUsername(registerDto.getUsername());
         employee.setPassword(passwordEncoder.encode(registerDto.getPassword()));
         employee.setPhoneNumber(registerDto.getPhoneNumber());
         employee.setEmail(registerDto.getEmail());
+        employee.setRole(registerDto.getRole());
 
         // Generate verification code and set verification time
-
         employee.generateVerificationCode();
 
+        // Save the new employee in the database
         employeeRepository.save(employee);
 
         // Send verification email
         String toEmail = employee.getEmail();
         String text = "Hello " + employee.getUsername() + ", your verification code is " + employee.getVerificationCode() + ".";
+        emailSender.sendEmailWithVerificationCode(toEmail, "Email Verification", text);
 
-        emailSender.sendEmailWithVerificationCode(toEmail, model.getSubject(), text);
-        System.out.println(text);
+        // Generate JWT token after registration
+        String token = jwtService.generateToken(employee.getUsername());
 
-        return ResponseEntity.ok("Employee registered successfully");
+        // Return the success message along with the generated token
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Employee registered successfully.");
+        response.put("token", token);
+
+        return ResponseEntity.ok(response);
     }
+
 
     @PostMapping("/verify")
     public ResponseEntity<String> verifyEmployee(@RequestParam Long id, @RequestParam String verificationCode) {

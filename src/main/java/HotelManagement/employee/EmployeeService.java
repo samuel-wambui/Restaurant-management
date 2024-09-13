@@ -131,7 +131,7 @@ public class EmployeeService {
 
         if (authentication.isAuthenticated()) {
 
-            String token = jwtService.generateTocken(loginDto.getUsername());
+            String token = jwtService.generateToken(loginDto.getUsername());
             System.out.println("jwt :" + token);
             return ResponseEntity.ok(token);
         } else {
