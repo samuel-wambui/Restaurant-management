@@ -1,9 +1,6 @@
 package HotelManagement.jwt;
 
-<<<<<<< HEAD
-public class JwtFilter {
-}
-=======
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -53,4 +50,4 @@ public  class JwtFilter extends OncePerRequestFilter {
     }
 }
 
->>>>>>> sam
+

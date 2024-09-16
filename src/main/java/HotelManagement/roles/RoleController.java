@@ -21,18 +21,18 @@ public class RoleController {
         }
 
         @PostMapping("/create")
-        @PreAuthorize("hasAuthority('admin:create')")
+        @PreAuthorize("hasAuthority('ADMIN_CREATE')")
         public Role createRole(@RequestParam String roleName, @RequestParam Set<Permissions> permissions, @RequestParam String postedBy) {
             return roleService.createNewRole(roleName, permissions, postedBy);
         }
 
         @PutMapping("/update/{roleId}")
-        @PreAuthorize("hasAuthority('admin:update')")
+        @PreAuthorize("hasAuthority('ADMIN_UPDATE')")
         public Role updateRolePermissions(@PathVariable Long roleId, @RequestParam Set<Permissions> permissions) {
             return roleService.updateRolePermissions(roleId, permissions);
         }
         @GetMapping("/getAll")
-    @PreAuthorize("hasAuthority('admin:read')")
+    @PreAuthorize("hasAuthority('ADMIN_READ')")
      public List<Role> getAllRoles() {
         return roleService.getAllRoles();
     }
