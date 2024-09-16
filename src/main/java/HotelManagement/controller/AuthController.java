@@ -15,15 +15,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -87,9 +85,10 @@ public class AuthController {
         String toEmail = employee.getEmail();
         String text = "Hello " + employee.getUsername() + ", your verification code is " + employee.getVerificationCode() + ".";
         emailSender.sendEmailWithVerificationCode(toEmail, "Email Verification", text);
+        Collection<? extends GrantedAuthority> authorities = employee.getAuthorities();// Get the employee's authorities (make sure it's a List<String>)
 
-        // Generate JWT token after registration
-        String token = jwtService.generateToken(employee.getUsername());
+// Generate the token by passing both username and authorities
+        String token = jwtService.generateToken(employee.getUsername(), Collections.singletonList(authorities.toString()));
 
         // Return the success message along with the generated token
         Map<String, String> response = new HashMap<>();

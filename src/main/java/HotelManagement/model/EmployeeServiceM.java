@@ -11,10 +11,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 @Service
 public class EmployeeServiceM {
@@ -25,6 +29,8 @@ public class EmployeeServiceM {
     private AuthenticationManager authenticationManager;
     @Autowired
     private JwtService jwtService;
+    @Autowired
+    UserDetailsService userDetailsService;
 
 
     public Employee saveEmployee(Employee employee) {
@@ -130,8 +136,17 @@ public class EmployeeServiceM {
                 authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword()));
 
         if (authentication.isAuthenticated()) {
+// Load user details by username (from loginDto)
+            UserDetails userDetails = userDetailsService.loadUserByUsername(loginDto.getUsername());
 
-            String token = jwtService.generateToken(loginDto.getUsername());
+// Convert authorities to List<String>
+            List<String> authorities = userDetails.getAuthorities().stream()
+                    .map(grantedAuthority -> grantedAuthority.getAuthority())
+                    .collect(Collectors.toList());
+
+// Generate the JWT token with username and authorities
+            String token = jwtService.generateToken(userDetails.getUsername(), authorities);
+
             System.out.println("jwt :" + token);
             return ResponseEntity.ok(token);
         } else {

@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 @Service
 public class RoleService {
@@ -30,6 +31,9 @@ public class RoleService {
             Role role = roleRepository.findById(roleId).orElseThrow(() -> new RuntimeException("Role not found"));
             role.setPermissions(newPermissions);
             return roleRepository.save(role);
+        }
+        public List<Role> getAllRoles(){
+            return roleRepository.findAll();
         }
     }
 

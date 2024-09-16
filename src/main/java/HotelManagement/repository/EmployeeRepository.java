@@ -21,4 +21,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
    List<Employee> findAllByDeletedFlag(String deletedFlag);
 
     Optional<Object> findByUsername(String username);
+
+    boolean existsByUsername(String adminUsername);
 }

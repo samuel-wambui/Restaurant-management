@@ -4,33 +4,21 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
-import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
-    private String secretKey;
+    private final String secretKey;
 
     private JwtService() {
         try {
@@ -42,28 +30,36 @@ public class JwtService {
         }
     }
 
-    public String generateToken(String username) {
+    // Generate token with authorities
+    public String generateToken(String username, List<String> authorities) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("authorities", authorities); // Add authorities to claims
 
         return Jwts.builder()
-                .claims()
-                .add(claims)
-                .subject(username)
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 60 * 60 * 30))
-                .and()
-                .signWith(getKey())
-                .compact();
-
-
+                .setClaims(claims) // Set claims
+                .setSubject(username) // Set subject
+                .setIssuedAt(new Date(System.currentTimeMillis())) // Issued time
+                .setExpiration(new Date(System.currentTimeMillis() + 30 * 60 * 1000)) // 30 min expiration
+                .signWith(getKey()) // Sign with secret key
+                .compact(); // Build token
     }
 
     public SecretKey getKey() {
-        byte[] keyBites = Decoders.BASE64.decode(secretKey);
-        return Keys.hmacShaKeyFor(keyBites);
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
+
     public String extractUserName(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    // Extract authorities (roles/permissions) from token
+    public List<GrantedAuthority> extractAuthorities(String token) {
+        Claims claims = extractAllClaims(token);
+        List<String> authorities = claims.get("authorities", List.class);
+        return authorities.stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
     }
 
     // Extract any claim
@@ -95,41 +91,5 @@ public class JwtService {
     // Extract expiration date from token
     private Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
-    }
-
-
-
-    @Component  // Registering JwtFilter as a Spring Bean
-    public static class JwtFilter extends OncePerRequestFilter {
-
-        @Autowired
-        private JwtService jwtService;
-
-        @Autowired
-        private UserDetailsService userDetailsService;
-
-        @Override
-        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-            String authHeader = request.getHeader("Authorization");
-            String token = null;
-            String username = null;
-
-            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-                token = authHeader.substring(7);
-                username = jwtService.extractUserName(token);
-            }
-
-            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-
-                if (jwtService.validateToken(token, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
-            }
-
-            filterChain.doFilter(request, response);  // Don't forget to continue the filter chain
-        }
     }
 }
