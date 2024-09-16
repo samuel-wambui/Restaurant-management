@@ -3,7 +3,9 @@ package HotelManagement;
 import HotelManagement.EmailApp.EmailSender;
 import HotelManagement.controller.AuthController;
 import HotelManagement.dto.LoginDto;
+import HotelManagement.dto.RegisterDto;
 import HotelManagement.employee.Employee;
+import HotelManagement.employee.EmployeeService;
 import HotelManagement.repository.EmployeeRepository;
 import HotelManagement.roles.Role;
 import HotelManagement.roles.RoleRepository;
@@ -31,41 +33,39 @@ public class HotelManagement {
 	EmployeeRepository employeeRepository;
 
 	@Bean
-	public CommandLineRunner commandLineRunner(AuthController authController, RoleRepository roleRepository) {
+	public CommandLineRunner commandLineRunner(EmployeeService employeeService, RoleRepository roleRepository) {
 		return args -> {
-			String adminUsername = "Admin";
-			String adminEmail = "samuelngari13@gmail.com";
+			String adminUsername = "sam";
+			String adminEmail = "hadricawamalwa@gmail.com";
 			String adminPassword = "sam@123";
 			Role adminRole = roleRepository.findByName("ADMIN")
 					.orElseThrow(() -> new RuntimeException("Error: Role ADMIN is not found."));
 			if (employeeRepository.existsByUsername(adminUsername)) {
-				authenticateUser(authController, adminUsername, adminPassword);
+				authenticateUser(employeeService, adminUsername, adminPassword);
 			} else {
-				registerUser(authController, emailSender, adminUsername, adminEmail, adminPassword, "1234567890", adminRole);
+				registerUser(employeeService, emailSender, adminUsername, adminEmail, adminPassword, "1234567891", adminRole);
 			}
 
-			String managerUsername = "Manager";
-			String managerEmail = "manager@example.com";
+			String managerUsername = "Waiter";
+			String managerEmail = "manager@example.commm";
 			String managerPassword = "manager@123";
 			Role managerRole = roleRepository.findByName("MANAGER")
 					.orElseThrow(() -> new RuntimeException("Error: Role MANAGER is not found."));
 			if (employeeRepository.existsByUsername(managerUsername)) {
-				authenticateUser(authController, managerUsername, managerPassword);
+				authenticateUser(employeeService, managerUsername, managerPassword);
 			} else {
-				registerUser(authController, emailSender, managerUsername, managerEmail, managerPassword, "0987654321", managerRole);
+				registerUser(employeeService, emailSender, managerUsername, managerEmail, managerPassword, "19876543212", managerRole);
 			}
 		};
 	}
 
-	private void authenticateUser(AuthController authController, String username, String password) {
+	private void authenticateUser(EmployeeService employeeService, String username, String password) {
 
 		LoginDto loginDto = new LoginDto();
 		loginDto.setUsername(username);
 		loginDto.setPassword(password);
-
-		// Authenticate user using login
-		ResponseEntity<String> response = authController.login(loginDto);
-		if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+		ResponseEntity<String> response = employeeService.signIn(loginDto);
+        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
 			String token = response.getBody().substring(7);
 			System.out.println(username + " auth token: " + token);
 		} else {
@@ -73,24 +73,24 @@ public class HotelManagement {
 		}
 	}
 
-	private void registerUser(AuthController authController, EmailSender emailSender, String username, String email, String password, String phoneNumber, Role role) {
-		// Register new user
-		Employee newUser = Employee.builder()
+	private void registerUser(EmployeeService employeeService, EmailSender emailSender, String username, String email, String password, String phoneNumber, Role role) {
+		Employee newEmployee= Employee.builder()
 				.username(username)
 				.email(email)
-				.password(password) // Ensure this is hashed properly in the controller
+				.password(password)  // Ensure hashing happens in the controller
 				.phoneNumber(phoneNumber)
 				.role(List.of(role))
-				.verificationCode(new Employee().generateVerificationCode())
-				.verificationTime(LocalDateTime.now())
+				.verifiedFlag("Y")
 				.build();
-		ResponseEntity<Map<String, String>> response = authController.register(newUser);
-		String token = response.getBody().get("token");
-		System.out.println(username + " auth token: " + token);
 
+		ResponseEntity<Map<String, String>> response = (ResponseEntity<Map<String, String>>) employeeService.registration(newEmployee);
 
-		emailSender.sendEmailWithVerificationCode(newUser.getEmail(),
-				"Verification code",
-				"Dear " + newUser.getUsername() + ", your verification code is " + newUser.getVerificationCode());
+		if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+			String token = response.getBody().get("token");
+			System.out.println(username + " auth token: " + token);
+		} else {
+			System.out.println("Registration failed: " + response.getBody().get("message"));
+		}
 	}
+
 }

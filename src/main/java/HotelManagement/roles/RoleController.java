@@ -29,6 +29,8 @@ public class RoleController {
         @PutMapping("/update/{roleId}")
         @PreAuthorize("hasAuthority('ADMIN_UPDATE')")
         public Role updateRolePermissions(@PathVariable Long roleId, @RequestParam Set<Permissions> permissions) {
+            Role role = new Role();
+            role.setId(role.getId());
             return roleService.updateRolePermissions(roleId, permissions);
         }
         @GetMapping("/getAll")
