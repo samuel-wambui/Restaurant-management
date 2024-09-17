@@ -52,7 +52,8 @@ public class SecurityConfig {
                                 "/api/users/**",
                                 "/verification/**",
                                 "/user",
-                                "/api/roles/**"
+                                "/api/roles/**",
+                                "/api/v1/tables/**"
                         ).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore((Filter) jwtFilter, UsernamePasswordAuthenticationFilter.class);

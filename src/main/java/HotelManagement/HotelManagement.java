@@ -66,8 +66,6 @@ public class HotelManagement {
 		loginDto.setPassword(password);
 		ResponseEntity<String> response = employeeService.signIn(loginDto);
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-			String token = response.getBody().substring(7);
-			System.out.println(username + " auth token: " + token);
 		} else {
 			System.out.println(username + " authentication failed: ");
 		}
@@ -86,8 +84,7 @@ public class HotelManagement {
 		ResponseEntity<Map<String, String>> response = (ResponseEntity<Map<String, String>>) employeeService.registration(newEmployee);
 
 		if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-			String token = response.getBody().get("token");
-			System.out.println(username + " auth token: " + token);
+
 		} else {
 			System.out.println("Registration failed: " + response.getBody().get("message"));
 		}
