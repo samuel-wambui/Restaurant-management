@@ -1,6 +1,7 @@
 package HotelManagement.billing;
 
 import HotelManagement.customer.Customer;
+import HotelManagement.tables.TablesEntity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -25,4 +26,8 @@ public class Billing {
     private Date billingDate;
 
     private String paymentMethod;
+
+    @ManyToOne
+    @JoinColumn(name = "table_id")
+    private TablesEntity table;
 }
