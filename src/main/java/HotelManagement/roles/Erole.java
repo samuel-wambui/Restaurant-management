@@ -15,14 +15,21 @@ import static HotelManagement.employee.Permissions.*;
 @RequiredArgsConstructor
 public enum Erole {
     USER(Collections.emptySet()),
-    ROLE_SUPERUSER(Collections.emptySet()),
-    MANAGER(Set.of(
+    ROLE_SUPERUSER(Set.of(
+            SUPERUSER_READ,
+            SUPERUSER_CREATE,
+            SUPERUSER_UPDATE,
+            SUPERUSER_DELETE,
+            ADMIN_READ,
+            ADMIN_UPDATE,
+            ADMIN_CREATE,
+            ADMIN_DELETE,
             MANAGER_READ,
             MANAGER_UPDATE,
             MANAGER_CREATE,
             MANAGER_DELETE
+
     )),
-    ROLE_SUPERVISOR(Collections.emptySet()),
     ADMIN(Set.of(
             ADMIN_READ,
             ADMIN_UPDATE,
@@ -33,6 +40,14 @@ public enum Erole {
             MANAGER_CREATE,
             MANAGER_DELETE
     )),
+    MANAGER(Set.of(
+            MANAGER_READ,
+            MANAGER_UPDATE,
+            MANAGER_CREATE,
+            MANAGER_DELETE
+
+    )),
+    ROLE_SUPERVISOR(Collections.emptySet()),
     ROLE_WAITER(Collections.emptySet());
 
     @Getter
