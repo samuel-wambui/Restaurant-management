@@ -54,7 +54,13 @@ public class SecurityConfig {
                                 "/user",
                                 "/api/roles/**",
                                 "/api/v1/tables/**",
-                                "/api/v1/messages/**"
+                                "/api/v1/messages/**",
+                                "/api/v1/orders/**",
+                                "/api/v1/meals/**",
+                                "/api/payments-methods/**",
+                                "/api/bookings/**",
+                                "/api/rooms/**"
+
                         ).permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore((Filter) jwtFilter, UsernamePasswordAuthenticationFilter.class);

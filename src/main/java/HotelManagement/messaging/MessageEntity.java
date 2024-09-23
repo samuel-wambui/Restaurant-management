@@ -1,6 +1,7 @@
 package HotelManagement.messaging;
 
 import HotelManagement.foodorder.FoodOrder;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -28,6 +29,7 @@ public class MessageEntity {
     // Link messages to food orders (optional)
     @ManyToOne
     @JoinColumn(name = "food_order_id")
+    @JsonIgnore
     private FoodOrder foodOrder;
 
     @PrePersist
