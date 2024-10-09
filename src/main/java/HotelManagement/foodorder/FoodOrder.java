@@ -1,5 +1,6 @@
 package HotelManagement.foodorder;
 
+import HotelManagement.messaging.MessageEntity;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -28,4 +29,8 @@ public class FoodOrder {
 
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
+
+    // Link to messages related to the order
+    @OneToMany(mappedBy = "foodOrder", cascade = CascadeType.ALL)
+    private List<MessageEntity> messages;
 }
