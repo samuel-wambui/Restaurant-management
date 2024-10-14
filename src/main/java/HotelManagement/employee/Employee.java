@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
@@ -30,16 +31,25 @@ public class Employee implements UserDetails {
  @GeneratedValue(strategy = GenerationType.IDENTITY)
  private long id;
 
- @Column(name = "username", nullable = false)
+ @Column(name = "userName")
  private String username;
 
- @Column(name = "phone_number", nullable = false)
+ @Column(name = "first_name")
+ private String firstName;
+
+ @Column(name = "middle_name")
+ private String middleName;
+
+ @Column(name = "last_name")
+ private String lastName;
+
+ @Column(name = "phone_number")
  private String phoneNumber;
 
- @Column(name = "email", nullable = false)
+ @Column(name = "email")
  private String email;
 
- @Column(name = "password", nullable = false)
+ @Column(name = "password")
  private String password;
 
  @Column(name = "verification_code")
@@ -48,10 +58,10 @@ public class Employee implements UserDetails {
  @Column(name = "verification_time")
  private LocalDateTime verificationTime;
 
- @Column(name = "verified_flag", nullable = false)
+ @Column(name = "verified_flag")
  private String verifiedFlag = "N";
 
- @Column(name = "locked_flag", nullable = false)
+ @Column(name = "locked_flag")
  private String lockedFlag = "N";
 
  @Column(name = "reset_password_verification")
@@ -60,7 +70,7 @@ public class Employee implements UserDetails {
  @Column(name = "reset_verification_time")
  private LocalDateTime resetVerificationTime;
 
- @Column(name = "deleted_flag", nullable = false)
+ @Column(name = "deleted_flag")
  private String deletedFlag = "N";
 
  @ManyToMany(fetch = FetchType.EAGER)
@@ -69,16 +79,49 @@ public class Employee implements UserDetails {
          joinColumns = @JoinColumn(name = "employee_id"),
          inverseJoinColumns = @JoinColumn(name = "role_id")
  )
- private List<Role> role;
+ private List<Role> role = new ArrayList<>();
+
+
+ // Username generation based on firstName, middleName, and lastName
+ public String generateUserName() {
+
+  if (middleName != null && !middleName.isEmpty()) {
+   String initial = middleName.substring(0, 1).toUpperCase() + ". ";
+   return firstName + " " + initial + lastName;
+  }
+
+  else if (firstName != null && !firstName.isEmpty() && lastName != null && !lastName.isEmpty()) {
+   return firstName + " " + lastName;
+  }
+
+  else if (firstName != null && !firstName.isEmpty()) {
+   return firstName;
+  } else if (lastName != null && !lastName.isEmpty()) {
+   return lastName;
+  }
+  return "UnknownUser";
+ }
+
+
+ @PrePersist
+ public void prePersist() {
+  // Automatically generate and set username if not provided
+  if (username == null || username.isEmpty()) {
+   this.username = generateUserName();
+  }
+ }
 
  @Override
  public Collection<? extends GrantedAuthority> getAuthorities() {
+  if (role == null || role.isEmpty()) {
+   return List.of();
+  }
   return role.stream()
           .flatMap(r -> r.getAuthorities().stream())
           .collect(Collectors.toList());
  }
 
- // Other UserDetails interface methods
+
  @Override
  public String getPassword() {
   return password;
@@ -109,6 +152,7 @@ public class Employee implements UserDetails {
   return !deletedFlag.equals("Y");
  }
 
+ // Constructor for partial initialization
  public Employee(String username, String phoneNumber, String email, String password) {
   this.username = username;
   this.phoneNumber = phoneNumber;
@@ -140,7 +184,6 @@ public class Employee implements UserDetails {
   this.verificationTime = LocalDateTime.now();
   return this.verificationCode; // Return the generated code
  }
-
 
  public boolean verifyCode(String code) {
   if (verificationCode.equals(code)) {

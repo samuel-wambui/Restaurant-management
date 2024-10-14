@@ -10,14 +10,18 @@ import java.util.List;
 @Builder
 public class RegisterDto {
 
-    private String username;
+    private String firstName;
+    private String middleName;
+    private String lastName;
     private String password;
     private String phoneNumber;
     private String email;
 
 
-    public RegisterDto(String username, String password, String phoneNumber, String email) {
-        this.username = username;
+    public RegisterDto(String firstName,String middleName,String lastName, String password, String phoneNumber, String email) {
+        this.firstName= firstName;
+        this.middleName= middleName;
+        this.lastName= lastName;
         this.password = password;
         this.phoneNumber = phoneNumber;
         this.email = email;
