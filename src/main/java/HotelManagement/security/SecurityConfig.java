@@ -55,7 +55,16 @@ public class SecurityConfig {
                                 "/verification/**",
                                 "/user",
                                 "/api/roles/**",
-                                "/api/stock/add" // Allow this specific endpoint
+                                "/api/stock/**",
+                                "/api/multiplier/**",
+                                "/api/v1/tables/**",
+                                "/api/v1/messages/**",
+                                "/api/v1/orders/**",
+                                "/api/v1/meals/**",
+                                "/api/payments-methods/**",
+                                "/api/bookings/**",
+                                "/api/rooms/**",
+                                "/api/stock/add"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -70,13 +79,19 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:4200");
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
+
+        config.setAllowCredentials(true); // Allow credentials (cookies, authorization headers)
+        config.setAllowedOrigins(List.of("http://localhost:4200")); // Explicitly allow localhost:4200
+        config.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type", "X-Requested-With")); // Limit allowed headers
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")); // Limit allowed HTTP methods
+        config.setExposedHeaders(List.of("Authorization")); // Expose any specific headers to the client if necessary
+        config.setMaxAge(3600L); // Cache the preflight response for 1 hour
+
         source.registerCorsConfiguration("/**", config);
         return source;
     }
+
+
 
 
     @Bean
