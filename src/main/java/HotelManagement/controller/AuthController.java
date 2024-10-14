@@ -57,9 +57,6 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<Map<String, String>> register(@RequestBody RegisterDto registerDto) {
 
-        if (employeeRepository.existsByUsernameAndDeletedFlag(registerDto.getUsername(), "N")) {
-            return new ResponseEntity<>(Map.of("message", "Username is already taken"), HttpStatus.BAD_REQUEST);
-        }
         if (employeeRepository.existsByPhoneNumberAndDeletedFlag(registerDto.getPhoneNumber(), "N")) {
             return new ResponseEntity<>(Map.of("message", "Phone number is already registered"), HttpStatus.BAD_REQUEST);
         }
@@ -69,7 +66,9 @@ public class AuthController {
 
 
         Employee employee = new Employee();
-        employee.setUsername(registerDto.getUsername());
+        employee.setUsername(registerDto.getFirstName());
+        employee.setUsername(registerDto.getMiddleName());
+        employee.setUsername(registerDto.getLastName());
         employee.setPassword(passwordEncoder.encode(registerDto.getPassword()));
         employee.setPhoneNumber(registerDto.getPhoneNumber());
         employee.setEmail(registerDto.getEmail());
@@ -80,12 +79,12 @@ public class AuthController {
         String toEmail = employee.getEmail();
         String text = "Hello " + employee.getUsername() + ", your verification code is " + employee.getVerificationCode() + ".";
         emailSender.sendEmailWithVerificationCode(toEmail, "Email Verification", text);
-        Collection<? extends GrantedAuthority> authorities = employee.getAuthorities();
+        //Collection<? extends GrantedAuthority> authorities = employee.getAuthorities();
 
-        String token = jwtService.generateToken(employee.getUsername(), Collections.singletonList(authorities.toString()));
+        //String token = jwtService.generateToken(employee.getUsername(), Collections.singletonList(authorities.toString()));
         Map<String, String> response = new HashMap<>();
         response.put("message", "Employee registered successfully.");
-        response.put("token", token);
+        //response.put("token", token);
 
         return ResponseEntity.ok(response);
     }
