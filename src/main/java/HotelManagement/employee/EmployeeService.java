@@ -2,6 +2,7 @@ package HotelManagement.employee;
 
 
 import HotelManagement.EmailApp.EmailSender;
+import HotelManagement.controller.LoginResponseDto;
 import HotelManagement.dto.LoginDto;
 import HotelManagement.jwt.JwtService;
 import HotelManagement.repository.EmployeeRepository;
@@ -147,27 +148,68 @@ public class EmployeeService {
         return codeBuilder.toString();
     }
 
-    public ResponseEntity<String> verify(LoginDto loginDto) {
-        Authentication authentication =
-                authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword()));
+    public ResponseEntity<LoginResponseDto> signIn(LoginDto loginDto) {
+        String username = loginDto.getEmail();
+        int attempts = loginAttempts.getOrDefault(username, 0);
 
-        if (authentication.isAuthenticated()) {
+        // Check for max login attempts
+        if (attempts >= MAX_LOGIN_ATTEMPTS) {
+            return ResponseEntity.status(HttpStatus.LOCKED)
+                    .body(new LoginResponseDto("Account locked due to too many failed login attempts.", null));
+        }
 
-            // Assuming you have a UserDetailsService to load the user by username
-            UserDetails userDetails = userDetailsService.loadUserByUsername(loginDto.getUsername());
+        Optional<Employee> optionalEmployee = employeeRepository.findByEmailAndDeletedFlag(username, "N");
+        if (optionalEmployee.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new LoginResponseDto("Please register first.", null));
+        }
 
-// Convert the authorities to a List<String>
-            List<String> authorities = userDetails.getAuthorities().stream()
-                    .map(grantedAuthority -> grantedAuthority.getAuthority()) // Convert GrantedAuthority to String
-                    .collect(Collectors.toList());
+        Employee employee = optionalEmployee.get();
 
-// Generate the token with username and authorities
-            String token = jwtService.generateToken(userDetails.getUsername(), authorities);
+        if ("Y".equals(employee.getDeletedFlag())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new LoginResponseDto("Account deactivated or deleted. Contact support.", null));
+        }
 
-            System.out.println("jwt :" + token);
-            return ResponseEntity.ok(token);
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("fail");
+        if ("Y".equals(employee.getLockedFlag())) {
+            return ResponseEntity.status(HttpStatus.LOCKED)
+                    .body(new LoginResponseDto("Your account is locked. Please reset your password.", null));
+        }
+
+        if (!"Y".equals(employee.getVerifiedFlag())) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new LoginResponseDto("Complete registration first.", null));
+        }
+
+        try {
+            // Authenticate user
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, loginDto.getPassword())
+            );
+
+            // Reset login attempts on success
+            loginAttempts.put(username, 0);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            // Call the verify method to return the token and message
+            return verify(loginDto);
+        } catch (BadCredentialsException ex) {
+            loginAttempts.put(username, attempts + 1);
+            int remainingAttempts = MAX_LOGIN_ATTEMPTS - loginAttempts.get(username);
+
+            // Lock account if necessary
+            if (remainingAttempts <= 0) {
+                employee.setLockedFlag(true);
+                employeeRepository.save(employee);
+                return ResponseEntity.status(HttpStatus.LOCKED)
+                        .body(new LoginResponseDto("Account locked due to too many failed login attempts.", null));
+            }
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new LoginResponseDto("Incorrect username or password. " + remainingAttempts + " attempts remaining.", null));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new LoginResponseDto("An error occurred during login.", null));
         }
     }
 
@@ -212,53 +254,31 @@ public class EmployeeService {
         return response;
     }
 
-    public ResponseEntity<String> signIn(LoginDto loginDto) {
-        String username = loginDto.getUsername();
-        int attempts = loginAttempts.getOrDefault(username, 0);
-        if (attempts >= MAX_LOGIN_ATTEMPTS) {
-            return ResponseEntity.status(HttpStatus.LOCKED)
-                    .body("Account locked due to too many failed login attempts.");
-        }
-        Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndDeletedFlag(username, "N");
-        if (optionalEmployee.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Please register first.");
-        }
-        Employee employee = optionalEmployee.get();
-        if ("Y".equals(employee.getDeletedFlag())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Account deactivated or deleted. Contact support.");
-        }
-        if ("Y".equals(employee.getLockedFlag())) {
-            return ResponseEntity.status(HttpStatus.LOCKED)
-                    .body("Your account is locked. Please reset your password.");
-        }
-        if (!"Y".equals(employee.getVerifiedFlag())) {
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body("Complete registration first.");
-        }
+    public ResponseEntity<LoginResponseDto> verify(LoginDto loginDto) {
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
+        );
 
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(username, loginDto.getPassword())
-            );
-            loginAttempts.put(username, 0);
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            return verify(loginDto);
-        } catch (BadCredentialsException ex) {
-            loginAttempts.put(username, attempts + 1);
-            int remainingAttempts = MAX_LOGIN_ATTEMPTS - loginAttempts.get(username);
-            if (remainingAttempts <= 0) {
-                employee.setLockedFlag(true);
-                employeeRepository.save(employee);
-                return ResponseEntity.status(HttpStatus.LOCKED)
-                        .body("Account locked due to too many failed login attempts.");
-            }
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Incorrect username or password. " + remainingAttempts + " attempts remaining.");
-        } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An error occurred during login.");
+        if (authentication.isAuthenticated()) {
+            // Load the user by username
+            UserDetails userDetails = userDetailsService.loadUserByUsername(loginDto.getEmail());
+
+            // Convert the authorities to a List<String>
+            List<String> authorities = userDetails.getAuthorities().stream()
+                    .map(grantedAuthority -> grantedAuthority.getAuthority()) // Convert GrantedAuthority to String
+                    .collect(Collectors.toList());
+
+            // Generate the token with username and authorities
+            String token = jwtService.generateToken(userDetails.getUsername(), authorities);
+
+            System.out.println("JWT Token: " + token);
+
+            // Return the success response with the token and message
+            LoginResponseDto response = new LoginResponseDto("Login successful", token);
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new LoginResponseDto("fail", null));
         }
     }
+
 }

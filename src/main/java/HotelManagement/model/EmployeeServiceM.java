@@ -133,11 +133,11 @@ public class EmployeeServiceM {
 
     public ResponseEntity<String> verify(LoginDto loginDto) {
         Authentication authentication =
-                authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword()));
+                authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword()));
 
         if (authentication.isAuthenticated()) {
 // Load user details by username (from loginDto)
-            UserDetails userDetails = userDetailsService.loadUserByUsername(loginDto.getUsername());
+            UserDetails userDetails = userDetailsService.loadUserByUsername(loginDto.getEmail());
 
 // Convert authorities to List<String>
             List<String> authorities = userDetails.getAuthorities().stream()

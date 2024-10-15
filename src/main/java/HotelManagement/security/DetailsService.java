@@ -26,10 +26,10 @@ public class DetailsService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         // Adjusted to check for "N" (not deleted) in the deletedFlag
-        Employee employee = employeeRepository.findByUsernameAndDeletedFlag(username, "N")
-                .orElseThrow(() -> new UsernameNotFoundException("Username not found"));
+        Employee employee = employeeRepository.findByEmailAndDeletedFlag(email, "N")
+                .orElseThrow(() -> new UsernameNotFoundException("email not found" ));
 
         // Mapping roles to authorities (permissions)
         return new User(employee.getUsername(), employee.getPassword(), mapRolesToAuthorities(employee.getRole()));

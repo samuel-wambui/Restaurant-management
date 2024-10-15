@@ -2,6 +2,8 @@ package HotelManagement.repository;
 
 import HotelManagement.employee.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,4 +25,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     Optional<Object> findByUsername(String username);
 
     boolean existsByUsername(String adminUsername);
+
+    Optional<Employee>findByEmailAndDeletedFlag(String email, String deletedFlag);
+
+
 }
