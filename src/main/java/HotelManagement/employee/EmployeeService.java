@@ -1,6 +1,7 @@
 package HotelManagement.employee;
 
 
+import HotelManagement.ApiResponse.ApiResponse;
 import HotelManagement.EmailApp.EmailSender;
 import HotelManagement.controller.LoginResponseDto;
 import HotelManagement.dto.LoginDto;
@@ -148,70 +149,7 @@ public class EmployeeService {
         return codeBuilder.toString();
     }
 
-    public ResponseEntity<LoginResponseDto> signIn(LoginDto loginDto) {
-        String username = loginDto.getEmail();
-        int attempts = loginAttempts.getOrDefault(username, 0);
 
-        // Check for max login attempts
-        if (attempts >= MAX_LOGIN_ATTEMPTS) {
-            return ResponseEntity.status(HttpStatus.LOCKED)
-                    .body(new LoginResponseDto("Account locked due to too many failed login attempts.", null));
-        }
-
-        Optional<Employee> optionalEmployee = employeeRepository.findByEmailAndDeletedFlag(username, "N");
-        if (optionalEmployee.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new LoginResponseDto("Please register first.", null));
-        }
-
-        Employee employee = optionalEmployee.get();
-
-        if ("Y".equals(employee.getDeletedFlag())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new LoginResponseDto("Account deactivated or deleted. Contact support.", null));
-        }
-
-        if ("Y".equals(employee.getLockedFlag())) {
-            return ResponseEntity.status(HttpStatus.LOCKED)
-                    .body(new LoginResponseDto("Your account is locked. Please reset your password.", null));
-        }
-
-        if (!"Y".equals(employee.getVerifiedFlag())) {
-            return ResponseEntity.status(HttpStatus.OK)
-                    .body(new LoginResponseDto("Complete registration first.", null));
-        }
-
-        try {
-            // Authenticate user
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(username, loginDto.getPassword())
-            );
-
-            // Reset login attempts on success
-            loginAttempts.put(username, 0);
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            // Call the verify method to return the token and message
-            return verify(loginDto);
-        } catch (BadCredentialsException ex) {
-            loginAttempts.put(username, attempts + 1);
-            int remainingAttempts = MAX_LOGIN_ATTEMPTS - loginAttempts.get(username);
-
-            // Lock account if necessary
-            if (remainingAttempts <= 0) {
-                employee.setLockedFlag(true);
-                employeeRepository.save(employee);
-                return ResponseEntity.status(HttpStatus.LOCKED)
-                        .body(new LoginResponseDto("Account locked due to too many failed login attempts.", null));
-            }
-
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new LoginResponseDto("Incorrect username or password. " + remainingAttempts + " attempts remaining.", null));
-        } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new LoginResponseDto("An error occurred during login.", null));
-        }
-    }
 
     public List<Employee> findAllEmployees() {
         return employeeRepository.findAll();
@@ -253,19 +191,90 @@ public class EmployeeService {
 
         return response;
     }
+    public ResponseEntity<ApiResponse> signIn(LoginDto loginDto) {
+        ApiResponse response = new ApiResponse();
+        String username = loginDto.getEmail();
+        int attempts = loginAttempts.getOrDefault(username, 0);
 
-    public ResponseEntity<LoginResponseDto> verify(LoginDto loginDto) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginDto.getEmail(), loginDto.getPassword())
-        );
+        // Check for max login attempts
+        if (attempts >= MAX_LOGIN_ATTEMPTS) {
+            response.setMessage("Account locked due to too many failed login attempts.");
+            response.setStatusCode(HttpStatus.LOCKED.value());
+            return ResponseEntity.status(HttpStatus.LOCKED).body(response);
+        }
 
-        if (authentication.isAuthenticated()) {
+        Optional<Employee> optionalEmployee = employeeRepository.findByEmailAndDeletedFlag(username, "N");
+        if (optionalEmployee.isEmpty()) {
+            response.setMessage("Please register first.");
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+
+        Employee employee = optionalEmployee.get();
+
+        if ("Y".equals(employee.getDeletedFlag())) {
+            response.setMessage("Account deactivated or deleted. Contact support.");
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+
+        if ("Y".equals(employee.getLockedFlag())) {
+            response.setMessage("Your account is locked. Please reset your password.");
+            response.setStatusCode(HttpStatus.LOCKED.value());
+            return ResponseEntity.status(HttpStatus.LOCKED).body(response);
+        }
+
+        if (!"Y".equals(employee.getVerifiedFlag())) {
+            response.setMessage("Complete registration first.");
+            response.setStatusCode(HttpStatus.OK.value());
+            return ResponseEntity.ok(response);
+        }
+
+        try {
+            // Authenticate user
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, loginDto.getPassword())
+            );
+
+            // Reset login attempts on success
+            loginAttempts.put(username, 0);
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            // Call the verify method to return the token and message
+            return verify(loginDto); // Return the response from verify, which includes the token
+        } catch (BadCredentialsException ex) {
+            loginAttempts.put(username, attempts + 1);
+            int remainingAttempts = MAX_LOGIN_ATTEMPTS - loginAttempts.get(username);
+
+            // Lock account if necessary
+            if (remainingAttempts <= 0) {
+                employee.setLockedFlag(true);
+                employeeRepository.save(employee);
+                response.setMessage("Account locked due to too many failed login attempts.");
+                response.setStatusCode(HttpStatus.LOCKED.value());
+                return ResponseEntity.status(HttpStatus.LOCKED).body(response);
+            }
+
+            response.setMessage("Incorrect username or password. " + remainingAttempts + " attempts remaining.");
+            response.setStatusCode(HttpStatus.UNAUTHORIZED.value());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        } catch (Exception ex) {
+            response.setMessage("An error occurred during login: " + ex.getMessage());
+            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    public ResponseEntity<ApiResponse> verify(LoginDto loginDto) {
+        ApiResponse response = new ApiResponse();
+
+        try {
             // Load the user by username
             UserDetails userDetails = userDetailsService.loadUserByUsername(loginDto.getEmail());
 
             // Convert the authorities to a List<String>
             List<String> authorities = userDetails.getAuthorities().stream()
-                    .map(grantedAuthority -> grantedAuthority.getAuthority()) // Convert GrantedAuthority to String
+                    .map(GrantedAuthority::getAuthority) // Convert GrantedAuthority to String
                     .collect(Collectors.toList());
 
             // Generate the token with username and authorities
@@ -273,11 +282,16 @@ public class EmployeeService {
 
             System.out.println("JWT Token: " + token);
 
-            // Return the success response with the token and message
-            LoginResponseDto response = new LoginResponseDto("Login successful", token);
+            // Set success response
+            response.setMessage("Login successful");
+            response.setEntity(token); // Set the token in the response
+            response.setStatusCode(HttpStatus.OK.value());
             return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new LoginResponseDto("fail", null));
+        } catch (Exception ex) {
+            // Handle exceptions and return an error response
+            response.setMessage("An error occurred during login: " + ex.getMessage());
+            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 

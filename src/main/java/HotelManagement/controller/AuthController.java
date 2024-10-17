@@ -1,10 +1,12 @@
 package HotelManagement.controller;
 
+import HotelManagement.ApiResponse.ApiResponse;
 import HotelManagement.EmailApp.EmailSender;
 import HotelManagement.EmailApp.Model;
 import HotelManagement.dto.ForgotPasswordDto;
 import HotelManagement.dto.LoginDto;
 import HotelManagement.dto.RegisterDto;
+import HotelManagement.dto.ResetPasswordDto;
 import HotelManagement.employee.Employee;
 import HotelManagement.employee.EmployeeService;
 import HotelManagement.jwt.JwtService;
@@ -50,102 +52,130 @@ public class AuthController {
 
 
     @PostMapping("/register")
-    public ResponseEntity<Map<String, String>> register(@RequestBody RegisterDto registerDto) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> register(@RequestBody RegisterDto registerDto) {
+
 
         if (employeeRepository.existsByPhoneNumberAndDeletedFlag(registerDto.getPhoneNumber(), "N")) {
-            return new ResponseEntity<>(Map.of("message", "Phone number is already registered"), HttpStatus.BAD_REQUEST);
+            ApiResponse<Map<String, String>> response = new ApiResponse<>();
+            response.setMessage("Phone number is already registered");
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
+
         if (employeeRepository.existsByEmailAndDeletedFlag(registerDto.getEmail(), "N")) {
-            return new ResponseEntity<>(Map.of("message", "Email is already registered"), HttpStatus.BAD_REQUEST);
+            ApiResponse<Map<String, String>> response = new ApiResponse<>();
+            response.setMessage("Email is already registered");
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
-
+        // Create new Employee object and set its properties
         Employee employee = new Employee();
-        employee.setUsername(registerDto.getFirstName());
-        employee.setUsername(registerDto.getMiddleName());
-        employee.setUsername(registerDto.getLastName());
+        employee.setFirstName(registerDto.getFirstName());
+        employee.setMiddleName(registerDto.getMiddleName());
+        employee.setLastName(registerDto.getLastName());
         employee.setPassword(passwordEncoder.encode(registerDto.getPassword()));
         employee.setPhoneNumber(registerDto.getPhoneNumber());
         employee.setEmail(registerDto.getEmail());
-
         employee.generateVerificationCode();
         employeeRepository.save(employee);
-
         String toEmail = employee.getEmail();
-        String text = "Hello " + employee.getUsername() + ", your verification code is " + employee.getVerificationCode() + ".";
+        String text = "Hello " + employee.getFirstName() + ", your verification code is " + employee.getVerificationCode() + ".";
         emailSender.sendEmailWithVerificationCode(toEmail, "Email Verification", text);
-        //Collection<? extends GrantedAuthority> authorities = employee.getAuthorities();
+        ApiResponse apiResponse = new ApiResponse<>();
+        apiResponse.setMessage("Employee registered successfully.");
+        apiResponse.setEntity(employee);
+        apiResponse.setStatusCode(HttpStatus.CREATED.value());
 
-        //String token = jwtService.generateToken(employee.getUsername(), Collections.singletonList(authorities.toString()));
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Employee registered successfully.");
-        //response.put("token", token);
 
-        return ResponseEntity.ok(response);
+        return new ResponseEntity<>(apiResponse, HttpStatus.CREATED);
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<String> verifyEmployee(@RequestParam Long id, @RequestParam String verificationCode) {
+    public ResponseEntity<ApiResponse<String>> verifyEmployee(@RequestBody Verification verification) {
+        System.out.println("Received payload: " + verification);
+        Long id = verification.getId();
+        String verificationCode = verification.getVerificationCode();
+        ApiResponse<String> response = new ApiResponse<>();
 
+        // Check if the employee exists
         Optional<Employee> optionalEmployee = employeeRepository.findByIdAndDeletedFlag(id, "N");
-
         if (optionalEmployee.isEmpty()) {
-            return ResponseEntity.badRequest().body("Employee not found");
-
+            response.setMessage("Employee not found");
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
 
         Employee employee = optionalEmployee.get();
-        if (!verificationCode.equals(employee.getVerificationCode())) {
-            return ResponseEntity.badRequest().body("Invalid verification code");
-        }
 
+        // Check if the verification code is valid
+        if (verificationCode == null || !verificationCode.equals(employee.getVerificationCode())) {
+            response.setMessage("Invalid verification code");
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            System.out.println("Received payload: " + verification);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
         LocalDateTime verificationTime = employee.getVerificationTime();
         LocalDateTime expiryTime = verificationTime.plusMinutes(5);
         if (LocalDateTime.now().isAfter(expiryTime)) {
             employeeService.deleteEmployee(id);
-            return ResponseEntity.badRequest().body("Verification code has expired");
+            response.setMessage("Verification code has expired");
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
+
 
         employee.setVerifiedFlag(true);
         employeeService.saveEmployee(employee);
-
         String toEmail = employee.getEmail();
         String text = "Dear " + employee.getUsername() + ", your account has been successfully verified.";
-        emailSender.sendEmailWithVerificationCode(toEmail, model.getSubject(), text);
-
-        return ResponseEntity.ok("User verified successfully");
+        emailSender.sendEmailWithVerificationCode(toEmail, "Account Verified", text);
+        response.setMessage("User verified successfully");
+        response.setStatusCode(HttpStatus.OK.value());
+        return ResponseEntity.ok(response);
     }
+
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponseDto> signIn(@RequestBody LoginDto loginDto) {
-        return employeeService.signIn(loginDto);
+    public ResponseEntity<ApiResponse> signIn(@RequestBody LoginDto loginDto) {
+
+        ResponseEntity<ApiResponse> serviceResponse = employeeService.signIn(loginDto);
+
+
+        return serviceResponse;
     }
 
-    @PostMapping("/forgotPassword")
-    public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordDto forgotPasswordDto) {
-        Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndDeletedFlag("N", forgotPasswordDto.getUsername());
 
+
+    @PostMapping("/forgotPassword")
+    public ApiResponse forgotPassword(@RequestBody ForgotPasswordDto forgotPasswordDto) {
+        Optional<Employee> optionalEmployee = employeeRepository.findByEmailAndDeletedFlag(forgotPasswordDto.getEmail() , "N");
+        ApiResponse response = new ApiResponse<>();
 
         if (optionalEmployee.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Employee not found or verification failed.");
+            response.setMessage("Employee not found or verification failed.");
+            response.setStatusCode(HttpStatus.NOT_FOUND.ordinal());
+            return(response);
 
         }
 
         Employee employee = optionalEmployee.get();
         employee.generateResetPasswordVerificationCode();
-        employee.setPassword(passwordEncoder.encode(forgotPasswordDto.getConfirmPassword()));
+
         employeeRepository.save(employee);
 
         String toEmail = employee.getEmail();
         String text = "Hello " + employee.getUsername() + ", your reset password verification code is " + employee.getResetPasswordVerification() + ".";
         emailSender.sendEmailWithVerificationCode(toEmail, model.getSubject(), text);
+        response.setMessage("Check your email for the verification code.");
+        response.setStatusCode(HttpStatus.FOUND.ordinal());
 
-        return ResponseEntity.ok("Check your email for the verification code.");
+        return(response);
     }
 
     @PostMapping("/verifyForgotPassword")
-    public ResponseEntity<String> verifyForgotPassword(@RequestParam String username, @RequestParam String verificationCode) {
-        Optional<Employee> optionalEmployee = employeeRepository.findByUsernameAndDeletedFlag("N", username);
+    public ResponseEntity<String> verifyForgotPassword( @RequestBody ResetPasswordDto resetPasswordDto) {
+        Optional<Employee> optionalEmployee = employeeRepository.findByEmailAndDeletedFlag("N", resetPasswordDto.getEmail());
 
 
         if (optionalEmployee.isEmpty()) {
@@ -154,16 +184,17 @@ public class AuthController {
         }
 
         Employee employee = optionalEmployee.get();
-        if (!verificationCode.equals(employee.getResetPasswordVerification())) {
+        if (!resetPasswordDto.getVerificationCode().equals(employee.getResetPasswordVerification())) {
             return ResponseEntity.badRequest().body("Invalid verification code.");
         }
 
-        LocalDateTime expiryTime = employee.getResetVerificationTime().plusMinutes(3);
+        LocalDateTime expiryTime = employee.getResetVerificationTime().plusMinutes(10);
         if (LocalDateTime.now().isAfter(expiryTime)) {
             return ResponseEntity.badRequest().body("Verification code has expired.");
         }
 
         employee.setLockedFlag(false);
+        employee.setPassword(resetPasswordDto.getPassword());
         employeeRepository.save(employee);
 
         String toEmail = employee.getEmail();
