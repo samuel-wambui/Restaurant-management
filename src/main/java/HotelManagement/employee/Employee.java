@@ -1,6 +1,5 @@
 package HotelManagement.employee;
 
-import HotelManagement.roles.Erole;
 import HotelManagement.roles.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

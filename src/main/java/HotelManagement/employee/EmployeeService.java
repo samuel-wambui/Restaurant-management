@@ -5,6 +5,7 @@ import HotelManagement.ApiResponse.ApiResponse;
 import HotelManagement.EmailApp.EmailSender;
 import HotelManagement.controller.LoginResponseDto;
 import HotelManagement.dto.LoginDto;
+import HotelManagement.dto.ResetPasswordDto;
 import HotelManagement.jwt.JwtService;
 import HotelManagement.repository.EmployeeRepository;
 import HotelManagement.roles.RoleRepository;
@@ -22,6 +23,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -294,5 +296,50 @@ public class EmployeeService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+    public ApiResponse verifyForgotPassword(ResetPasswordDto resetPasswordDto) {
+        ApiResponse response = new ApiResponse<>();
+        Optional<Employee> optionalEmployee = employeeRepository.findByEmailAndDeletedFlag(resetPasswordDto.getEmail(), "N");
 
+        if (optionalEmployee.isEmpty()) {
+            response.setMessage("Employee not found.");
+            response.setStatusCode(HttpStatus.NOT_FOUND.value());
+            return response;
+        }
+
+        if (resetPasswordDto.getVerificationCode() == null) {
+            response.setMessage("Missing verification code");
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            throw new IllegalArgumentException("Missing verification code");
+        }
+
+        Employee employee = optionalEmployee.get();
+        if (!resetPasswordDto.getVerificationCode().equals(employee.getResetPasswordVerification())) {
+            response.setMessage("Invalid verification code");
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            return response;
+        }
+
+        LocalDateTime expiryTime = employee.getResetVerificationTime().plusMinutes(10);
+        if (LocalDateTime.now().isAfter(expiryTime)) {
+            response.setMessage("Verification code expired");
+            response.setStatusCode(HttpStatus.GONE.value());
+            return response;
+        }
+
+        // Update the password and unlock the account
+        employee.setLockedFlag(false);
+        employee.setPassword(passwordEncoder.encode(resetPasswordDto.getPassword()));
+        loginAttempts.put(resetPasswordDto.getEmail(), 0);
+        employeeRepository.save(employee);
+
+
+        // Send an email to the user
+        String toEmail = employee.getEmail();
+        String text = "Dear " + employee.getUsername() + ", your account has been unlocked.";
+        emailSender.sendEmailWithVerificationCode(toEmail, "Account Unlocked", text);
+
+        response.setMessage("Password updated successfully.");
+        response.setStatusCode(HttpStatus.OK.value());
+        return response;
+    }
 }

@@ -174,33 +174,6 @@ public class AuthController {
     }
 
     @PostMapping("/verifyForgotPassword")
-    public ResponseEntity<String> verifyForgotPassword( @RequestBody ResetPasswordDto resetPasswordDto) {
-        Optional<Employee> optionalEmployee = employeeRepository.findByEmailAndDeletedFlag("N", resetPasswordDto.getEmail());
-
-
-        if (optionalEmployee.isEmpty()) {
-            return ResponseEntity.badRequest().body("Employee not found.");
-
-        }
-
-        Employee employee = optionalEmployee.get();
-        if (!resetPasswordDto.getVerificationCode().equals(employee.getResetPasswordVerification())) {
-            return ResponseEntity.badRequest().body("Invalid verification code.");
-        }
-
-        LocalDateTime expiryTime = employee.getResetVerificationTime().plusMinutes(10);
-        if (LocalDateTime.now().isAfter(expiryTime)) {
-            return ResponseEntity.badRequest().body("Verification code has expired.");
-        }
-
-        employee.setLockedFlag(false);
-        employee.setPassword(resetPasswordDto.getPassword());
-        employeeRepository.save(employee);
-
-        String toEmail = employee.getEmail();
-        String text = "Dear " + employee.getUsername() + ", your account has been unlocked.";
-        emailSender.sendEmailWithVerificationCode(toEmail, model.getSubject(), text);
-
-        return ResponseEntity.ok("Password updated successfully.");
-    }
-}
+    public ApiResponse verifyForgotPassword(@RequestBody ResetPasswordDto resetPasswordDto) {
+        return employeeService.verifyForgotPassword(resetPasswordDto);
+    }}
