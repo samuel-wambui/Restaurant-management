@@ -64,7 +64,9 @@ public class SecurityConfig {
                                 "/api/payments-methods/**",
                                 "/api/bookings/**",
                                 "/api/rooms/**",
+                                "/api/rooms/**",
                                 "/api/stock/add"
+
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
