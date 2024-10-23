@@ -49,6 +49,19 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    public String generateRefreshToken(String username, List<String> authorities) {
+        return Jwts.builder()
+                .setSubject(username)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000)) // 7 days expiration
+                .signWith(getKey())
+                .compact();
+    }
+
+    // Validate refresh token
+    public boolean validateRefreshToken(String token) {
+        return !isTokenExpired(token);
+    }
     public String extractUserName(String token) {
         return extractClaim(token, Claims::getSubject);
     }

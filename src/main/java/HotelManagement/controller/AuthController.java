@@ -1,6 +1,7 @@
 package HotelManagement.controller;
 
 import HotelManagement.ApiResponse.ApiResponse;
+import HotelManagement.ApiResponse.LoginApiResponse;
 import HotelManagement.EmailApp.EmailSender;
 import HotelManagement.EmailApp.Model;
 import HotelManagement.dto.ForgotPasswordDto;
@@ -9,17 +10,23 @@ import HotelManagement.dto.RegisterDto;
 import HotelManagement.dto.ResetPasswordDto;
 import HotelManagement.employee.Employee;
 import HotelManagement.employee.EmployeeService;
+import HotelManagement.jwt.JwtResponse;
 import HotelManagement.jwt.JwtService;
+import HotelManagement.jwt.TokenRefreshRequest;
 import HotelManagement.repository.EmployeeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -44,6 +51,9 @@ public class AuthController {
 
     @Autowired
     private EmployeeService employeeService;
+
+    @Autowired
+    UserDetailsService  userDetailsService;
 
     private final Map<String, Integer> loginAttempts = new HashMap<>();
     private final int MAX_LOGIN_ATTEMPTS = 3;
@@ -137,15 +147,40 @@ public class AuthController {
 
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse> signIn(@RequestBody LoginDto loginDto) {
+    public ResponseEntity<LoginApiResponse> signIn(@RequestBody LoginDto loginDto) {
 
-        ResponseEntity<ApiResponse> serviceResponse = employeeService.signIn(loginDto);
+        ResponseEntity<LoginApiResponse> serviceResponse = employeeService.signIn(loginDto);
 
 
         return serviceResponse;
     }
+    @PostMapping("/refresh-token")
+    public ResponseEntity<?> refreshToken(@RequestBody TokenRefreshRequest request) {
+        String refreshToken = request.getRefreshToken();
 
+        // Validate the refresh token
+        if (!jwtService.validateRefreshToken(refreshToken)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
+        }
+        String username = jwtService.extractUserName(refreshToken);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
+        List<String> authorities = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority) // Convert GrantedAuthority to String
+                .collect(Collectors.toList());
+
+        System.out.println("validating.................");
+        // Generate new access and refresh tokens
+        String newAccessToken = jwtService.generateToken(username,authorities);
+        String newRefreshToken = jwtService.generateRefreshToken(username,authorities);
+
+        // Return tokens to the client
+        Map<String, String> tokens = new HashMap<>();
+        tokens.put("accessToken", newAccessToken);
+        tokens.put("refreshToken", newRefreshToken);
+
+        return ResponseEntity.ok(tokens);
+    }
 
     @PostMapping("/forgotPassword")
     public ApiResponse forgotPassword(@RequestBody ForgotPasswordDto forgotPasswordDto) {

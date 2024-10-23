@@ -2,6 +2,7 @@ package HotelManagement.employee;
 
 
 import HotelManagement.ApiResponse.ApiResponse;
+import HotelManagement.ApiResponse.LoginApiResponse;
 import HotelManagement.EmailApp.EmailSender;
 import HotelManagement.controller.LoginResponseDto;
 import HotelManagement.dto.LoginDto;
@@ -193,8 +194,8 @@ public class EmployeeService {
 
         return response;
     }
-    public ResponseEntity<ApiResponse> signIn(LoginDto loginDto) {
-        ApiResponse response = new ApiResponse();
+    public ResponseEntity<LoginApiResponse> signIn(LoginDto loginDto) {
+        LoginApiResponse response = new LoginApiResponse();
         String username = loginDto.getEmail();
         int attempts = loginAttempts.getOrDefault(username, 0);
 
@@ -267,12 +268,13 @@ public class EmployeeService {
         }
     }
 
-    public ResponseEntity<ApiResponse> verify(LoginDto loginDto) {
-        ApiResponse response = new ApiResponse();
+    public ResponseEntity<LoginApiResponse> verify(LoginDto loginDto) {
+        LoginApiResponse response = new LoginApiResponse();
 
         try {
             // Load the user by username
             UserDetails userDetails = userDetailsService.loadUserByUsername(loginDto.getEmail());
+            String userName = loginDto.getEmail();
 
             // Convert the authorities to a List<String>
             List<String> authorities = userDetails.getAuthorities().stream()
@@ -280,13 +282,16 @@ public class EmployeeService {
                     .collect(Collectors.toList());
 
             // Generate the token with username and authorities
-            String token = jwtService.generateToken(userDetails.getUsername(), authorities);
+            String token = jwtService.generateToken(userName, authorities);
+            String refreshToken = jwtService.generateRefreshToken(userName,authorities);
 
             System.out.println("JWT Token: " + token);
+            System.out.println("refreshTocken" + refreshToken);
 
             // Set success response
             response.setMessage("Login successful");
-            response.setEntity(token); // Set the token in the response
+            response.setToken(token);
+            response.setRefreshToken(refreshToken);// Set the token in the response
             response.setStatusCode(HttpStatus.OK.value());
             return ResponseEntity.ok(response);
         } catch (Exception ex) {
