@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +19,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
+    @Autowired
+    JwtBlacklistService jwtBlacklistService;
     private final String secretKey;
 
     private JwtService() {
@@ -93,7 +96,12 @@ public class JwtService {
     // Validate token
     public boolean validateToken(String token, UserDetails userDetails) {
         final String username = extractUserName(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+
+        boolean isValidUsername = username.equals(userDetails.getUsername());
+        boolean isExpired = isTokenExpired(token);
+        boolean isBlacklisted = jwtBlacklistService.isTokenBlacklisted(token);
+
+        return isValidUsername && !isExpired && !isBlacklisted;
     }
 
     // Check if token is expired

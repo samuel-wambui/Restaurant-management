@@ -10,10 +10,11 @@ import HotelManagement.dto.RegisterDto;
 import HotelManagement.dto.ResetPasswordDto;
 import HotelManagement.employee.Employee;
 import HotelManagement.employee.EmployeeService;
-import HotelManagement.jwt.JwtResponse;
+import HotelManagement.jwt.JwtBlacklistService;
 import HotelManagement.jwt.JwtService;
 import HotelManagement.jwt.TokenRefreshRequest;
 import HotelManagement.repository.EmployeeRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,10 +23,16 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -54,6 +61,8 @@ public class AuthController {
 
     @Autowired
     UserDetailsService  userDetailsService;
+    @Autowired
+    JwtBlacklistService jwtBlacklistService;
 
     private final Map<String, Integer> loginAttempts = new HashMap<>();
     private final int MAX_LOGIN_ATTEMPTS = 3;
@@ -153,6 +162,23 @@ public class AuthController {
 
 
         return serviceResponse;
+    }
+    @PostMapping("/logout")
+    public ApiResponse logout(HttpServletRequest request) {
+        ApiResponse response = new ApiResponse<>();
+        String token = extractTokenFromRequest(request);
+        response.setMessage("Logout Successful");
+        response.setStatusCode(HttpStatus.OK.value());
+        jwtBlacklistService.addToBlacklist(token); // Add token to blacklist
+        return (response);
+    }
+
+    private String extractTokenFromRequest(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (header != null && header.startsWith("Bearer ")) {
+            return header.substring(7);
+        }
+        return null;
     }
     @PostMapping("/refresh-token")
     public ResponseEntity<?> refreshToken(@RequestBody TokenRefreshRequest request) {
