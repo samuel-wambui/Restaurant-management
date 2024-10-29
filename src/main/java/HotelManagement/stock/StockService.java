@@ -30,7 +30,7 @@ public class StockService {
             double multiplier = profitMultiplier.getMultiplier();
             double expectedProfit = (multiplier * cost * numericQuantity) - (cost * numericQuantity);
 
-            stock.setExpectedProfit(expectedProfit);
+            //stock.setExpectedProfit(expectedProfit);
         }
 
         return stockEntityRepo.save(stock);
