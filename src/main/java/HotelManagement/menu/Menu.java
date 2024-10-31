@@ -1,6 +1,7 @@
 package HotelManagement.menu;
 
 import HotelManagement.recipe.Recipe;
+import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -13,6 +14,7 @@ import java.util.Set;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Entity
 public class Menu {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,5 +22,5 @@ public class Menu {
 
     private String menuName;
     private MenuCategory category;
-    private Set<Recipe> recipes;
+//    private Set<Recipe> recipes;
 }
