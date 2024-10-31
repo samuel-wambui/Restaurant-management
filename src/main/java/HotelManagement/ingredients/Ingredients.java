@@ -1,13 +1,14 @@
 package HotelManagement.ingredients;
 
+import HotelManagement.costing.Costing;
 import HotelManagement.recipe.Recipe;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -20,8 +21,12 @@ public class Ingredients {
 
     private String name;
 
-    private Double cost;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recipe_id")
     private Recipe recipe;
+
+    @OneToMany(mappedBy = "ingredient", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Costing> costings = new ArrayList<>();
 }
+
+
