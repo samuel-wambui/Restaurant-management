@@ -36,6 +36,10 @@ public class Costing {
     private SpicesAndSeasonings spice;
 
 
-    private Long commodityId;
+    private String deletedFlag = "N";
+
+
+
+
 }
 

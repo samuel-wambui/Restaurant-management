@@ -27,6 +27,8 @@ public class Ingredients {
 
     @OneToMany(mappedBy = "ingredient", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Costing> costings = new ArrayList<>();
+
+    private String deletedFlag = "N";
 }
 
 

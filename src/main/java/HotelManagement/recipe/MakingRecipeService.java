@@ -29,19 +29,17 @@ public class MakingRecipeService {
         recipe.setRecipeName(recipeDto.getRecipeName());
 
         Set<Ingredients> ingredientsSet = new HashSet<>();
-        for (Long ingredientId : recipeDto.getIngredientIds()) {
-            ingredientsRepo.findById(ingredientId).ifPresentOrElse(
-                    ingredientsSet::add,
-                    () -> { throw new IllegalArgumentException("Ingredient with ID " + ingredientId + " not found"); }
-            );
+        if (recipeDto.getIngredientIds() != null) {
+            for (Long ingredientId : recipeDto.getIngredientIds()) {
+                ingredientsRepo.findByIdAndDeletedFlag(ingredientId, "N").ifPresent(ingredientsSet::add);
+            }
         }
 
         Set<SpicesAndSeasonings> spicesSet = new HashSet<>();
-        for (Long spiceId : recipeDto.getSpiceIds()) {
-            spicesRepo.findById(spiceId).ifPresentOrElse(
-                    spicesSet::add,
-                    () -> { throw new IllegalArgumentException("Spice with ID " + spiceId + " not found"); }
-            );
+        if (recipeDto.getSpiceIds() != null) {
+            for (Long spiceId : recipeDto.getSpiceIds()) {
+                spicesRepo.findByIdAndDeletedFlag(spiceId, "N").ifPresent(spicesSet::add);
+            }
         }
 
         recipe.setIngredientsSet(ingredientsSet);
@@ -49,6 +47,7 @@ public class MakingRecipeService {
 
         return recipeRepo.save(recipe);
     }
+
 
     // Read a recipe by ID
     public Optional<Recipe> getRecipeById(Long id) {
@@ -57,40 +56,58 @@ public class MakingRecipeService {
 
     // Read all recipes
     public Iterable<Recipe> getAllRecipes() {
-        return recipeRepo.findAll();
+        return (Iterable<Recipe>) recipeRepo.findAllByDeletedFlag("N");
     }
 
     // Update an existing recipe
     public Recipe updateRecipe(Long id, RecipeDto recipeDto) {
-        Recipe recipe = recipeRepo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Recipe with ID " + id + " not found"));
+        // Find the recipe by ID and check if it's not deleted
+        Optional<Recipe> optionalRecipe = recipeRepo.findByIdAndDeletedFlag(id, "N");
+        if (!optionalRecipe.isPresent()) {
+            throw new IllegalArgumentException("Recipe with ID " + id + " not found");
+        }
 
+        Recipe recipe = optionalRecipe.get();
+
+        // Update recipe name
         recipe.setRecipeName(recipeDto.getRecipeName());
 
+        // Update ingredients set
         Set<Ingredients> ingredientsSet = new HashSet<>();
         for (Long ingredientId : recipeDto.getIngredientIds()) {
-            Ingredients ingredient = ingredientsRepo.findById(ingredientId)
-                    .orElseThrow(() -> new IllegalArgumentException("Ingredient with ID " + ingredientId + " not found"));
-            ingredientsSet.add(ingredient);
+            Optional<Ingredients> optionalIngredient = ingredientsRepo.findById(ingredientId);
+            if (optionalIngredient.isPresent()) {
+                ingredientsSet.add(optionalIngredient.get());
+            } else {
+                throw new IllegalArgumentException("Ingredient with ID " + ingredientId + " not found");
+            }
         }
         recipe.setIngredientsSet(ingredientsSet);
 
+        // Update spices set
         Set<SpicesAndSeasonings> spicesSet = new HashSet<>();
         for (Long spiceId : recipeDto.getSpiceIds()) {
-            SpicesAndSeasonings spice = spicesRepo.findById(spiceId)
-                    .orElseThrow(() -> new IllegalArgumentException("Spice with ID " + spiceId + " not found"));
-            spicesSet.add(spice);
+            Optional<SpicesAndSeasonings> optionalSpice = spicesRepo.findById(spiceId);
+            if (optionalSpice.isPresent()) {
+                spicesSet.add(optionalSpice.get());
+            } else {
+                throw new IllegalArgumentException("Spice with ID " + spiceId + " not found");
+            }
         }
         recipe.setSpicesSet(spicesSet);
 
+        // Save and return the updated recipe
         return recipeRepo.save(recipe);
     }
 
     // Delete a recipe by ID
     public void deleteRecipe(Long id) {
-        if (!recipeRepo.existsById(id)) {
+        Recipe existingRecipe = recipeRepo.findById(id).get();
+        if (existingRecipe == null) {
             throw new IllegalArgumentException("Recipe with ID " + id + " not found");
         }
-        recipeRepo.deleteById(id);
+        existingRecipe.setDeletedFlag("Y");
+
+        recipeRepo.save(existingRecipe);
     }
 }

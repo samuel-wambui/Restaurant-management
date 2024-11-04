@@ -16,7 +16,6 @@ public class IngredientsService {
     public Ingredients createIngredient(IngredientsDto ingredientsDto) {
         Ingredients ingredient = new Ingredients();
         ingredient.setName(ingredientsDto.getName());
-        ingredient.setCost(ingredientsDto.getCost());
         return ingredientsRepo.save(ingredient);
     }
 
@@ -34,7 +33,6 @@ public class IngredientsService {
     public Ingredients updateIngredient(Long id, Ingredients updatedIngredient) {
         return ingredientsRepo.findById(id).map(ingredient -> {
             ingredient.setName(updatedIngredient.getName());
-            ingredient.setCost(updatedIngredient.getCost());
             return ingredientsRepo.save(ingredient);
         }).orElseThrow(() -> new IllegalArgumentException("Ingredient with ID " + id + " not found."));
     }

@@ -18,7 +18,7 @@ public class IngredientsController {
     private IngredientsService ingredientsService;
 
     // Create a new ingredient
-    @PostMapping
+    @PostMapping("createIngredient")
     public ResponseEntity<ApiResponse<Ingredients>> createIngredient(@RequestBody IngredientsDto ingredient) {
         ApiResponse response = new ApiResponse<>();
         Ingredients savedIngredient = ingredientsService.createIngredient(ingredient);

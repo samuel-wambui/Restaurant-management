@@ -23,6 +23,7 @@ public class SpicesAndSeasonings {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recipe_id")
     private Recipe recipe;
+    private String deletedFlag = "N";
 
     @OneToMany(mappedBy = "spice", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Costing> costings = new ArrayList<>();

@@ -25,4 +25,6 @@ public class Recipe {
 
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<SpicesAndSeasonings> spicesSet = new HashSet<>();
+
+    private String deletedFlag = "N";
 }

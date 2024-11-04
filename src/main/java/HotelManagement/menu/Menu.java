@@ -22,5 +22,7 @@ public class Menu {
 
     private String menuName;
     private MenuCategory category;
+
+    private String deletedFlag ="N";
 //    private Set<Recipe> recipes;
 }

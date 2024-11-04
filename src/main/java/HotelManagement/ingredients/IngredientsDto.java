@@ -6,5 +6,4 @@ import lombok.Data;
 public class IngredientsDto {
     private String name;
 
-    private Double cost;
 }
