@@ -15,6 +15,8 @@ public class CostingController {
     private CostingService costingService;
     @PostMapping("/createCost")
     public ResponseEntity<ApiResponse<Costing>> createCost(@RequestBody CostingDto costingDto) {
+        System.out.println("Incoming CostingDto: " + costingDto);
+
         ApiResponse<Costing> response = new ApiResponse<>();
 
         try {

@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -35,6 +36,13 @@ public class RecipeController {
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @GetMapping("/details")  // Endpoint to retrieve recipes with ingredients and spices
+    public ResponseEntity<List<RecipeSpiceIngredientCostDTO>> getAllRecipesWithIngredientsAndSpices() {
+        List<RecipeSpiceIngredientCostDTO> recipesWithDetails = makingRecipeService.getAllRecipesWithIngredientsAndSpices();
+        return ResponseEntity.ok(recipesWithDetails); // Return the list with HTTP 200 OK
+    }
+
 
     // Get a recipe by ID
     @GetMapping("/{id}")

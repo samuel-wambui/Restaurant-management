@@ -32,11 +32,11 @@ public class CostingService {
 
         // Check if the commodity is an ingredient or a spice and set the appropriate reference
         if (costingDto.getCostCategory() == CostCategory.INGREDIENT) {
-            Ingredients ingredient = ingredientsRepo.findById(costingDto.getCommodityId())
-                    .orElseThrow(() -> new IllegalArgumentException("Ingredient: " + costingDto.getCommodityId() +" does not exist"));
+            Ingredients ingredient = ingredientsRepo.findById(costingDto.getIngredientId())
+                    .orElseThrow(() -> new IllegalArgumentException("Ingredient: " + costingDto.getIngredientId() + " does not exist"));
             cost.setIngredient(ingredient);
-        } else if (costingDto.getCostCategory() == CostCategory.SPICES_OR_SEASONINGS    ) {
-            SpicesAndSeasonings spice = spicesRepo.findById(costingDto.getCommodityId())
+        } else if (costingDto.getCostCategory() == CostCategory.SPICES_OR_SEASONINGS) {
+            SpicesAndSeasonings spice = spicesRepo.findById(costingDto.getSpiceId())
                     .orElseThrow(() -> new IllegalArgumentException("Specified spice does not exist"));
             cost.setSpice(spice);
         } else {
@@ -46,6 +46,7 @@ public class CostingService {
         // Save and return the new Costing entity
         return costingRepo.save(cost);
     }
+
     //find all
     public List<Costing> findAllCosts() {
         return costingRepo.findAll();
@@ -67,12 +68,12 @@ public class CostingService {
         existingCost.setCostCategory(costingDto.getCostCategory());
 
         if (costingDto.getCostCategory() == CostCategory.INGREDIENT) {
-            Ingredients ingredient = ingredientsRepo.findById(costingDto.getCommodityId())
+            Ingredients ingredient = ingredientsRepo.findById(costingDto.getIngredientId())
                     .orElseThrow(() -> new IllegalArgumentException("Ingredient not found"));
             existingCost.setIngredient(ingredient);
             existingCost.setSpice(null);
         } else if (costingDto.getCostCategory() == CostCategory.SPICES_OR_SEASONINGS) {
-            SpicesAndSeasonings spice = spicesRepo.findById(costingDto.getCommodityId())
+            SpicesAndSeasonings spice = spicesRepo.findById(costingDto.getSpiceId())
                     .orElseThrow(() -> new IllegalArgumentException("Spice not found"));
             existingCost.setSpice(spice);
             existingCost.setIngredient(null);

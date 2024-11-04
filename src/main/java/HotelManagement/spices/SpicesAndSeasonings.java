@@ -7,7 +7,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.ArrayList;
 
 @Data
 @AllArgsConstructor
@@ -20,14 +23,11 @@ public class SpicesAndSeasonings {
 
     private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recipe_id")
-    private Recipe recipe;
+    @ManyToMany(mappedBy = "spicesSet")
+    private Set<Recipe> recipes = new HashSet<>();
+
     private String deletedFlag = "N";
 
     @OneToMany(mappedBy = "spice", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Costing> costings = new ArrayList<>();
 }
-
-
-

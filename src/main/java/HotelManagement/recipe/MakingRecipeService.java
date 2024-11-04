@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -58,7 +59,9 @@ public class MakingRecipeService {
     public Iterable<Recipe> getAllRecipes() {
         return (Iterable<Recipe>) recipeRepo.findAllByDeletedFlag("N");
     }
-
+    public List<RecipeSpiceIngredientCostDTO> getAllRecipesWithIngredientsAndSpices() {
+        return recipeRepo.findAllRecipesWithIngredientsAndSpices();
+    }
     // Update an existing recipe
     public Recipe updateRecipe(Long id, RecipeDto recipeDto) {
         // Find the recipe by ID and check if it's not deleted

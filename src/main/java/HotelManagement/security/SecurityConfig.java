@@ -68,7 +68,8 @@ public class SecurityConfig {
                                 "/api/stock/add",
                                 "/recipes/**",
                                 "/cost/**",
-                                "/api/ingredients/**"
+                                "/api/ingredients/**",
+                                "/api/spices/**"
 
                         ).permitAll()
                         .anyRequest().authenticated()
