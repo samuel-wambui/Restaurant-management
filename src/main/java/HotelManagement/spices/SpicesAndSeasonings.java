@@ -2,6 +2,9 @@ package HotelManagement.spices;
 
 import HotelManagement.costing.Costing;
 import HotelManagement.recipe.Recipe;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,10 +27,13 @@ public class SpicesAndSeasonings {
     private String name;
 
     @ManyToMany(mappedBy = "spicesSet")
+    @JsonBackReference
     private Set<Recipe> recipes = new HashSet<>();
+
 
     private String deletedFlag = "N";
 
-    @OneToMany(mappedBy = "spice", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Costing> costings = new ArrayList<>();
+    @OneToOne(mappedBy = "spicesAndSeasonings", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @JsonManagedReference
+    private Costing costing;
 }

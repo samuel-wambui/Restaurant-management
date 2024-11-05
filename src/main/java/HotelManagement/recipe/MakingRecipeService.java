@@ -59,9 +59,9 @@ public class MakingRecipeService {
     public Iterable<Recipe> getAllRecipes() {
         return (Iterable<Recipe>) recipeRepo.findAllByDeletedFlag("N");
     }
-    public List<RecipeSpiceIngredientCostDTO> getAllRecipesWithIngredientsAndSpices() {
-        return recipeRepo.findAllRecipesWithIngredientsAndSpices();
-    }
+   public List<RecipeSpiceIngredientCostDTO> getAllRecipesWithIngredientsAndSpices() {
+       return recipeRepo.findAllRecipesWithIngredientsAndSpices();
+   }
     // Update an existing recipe
     public Recipe updateRecipe(Long id, RecipeDto recipeDto) {
         // Find the recipe by ID and check if it's not deleted

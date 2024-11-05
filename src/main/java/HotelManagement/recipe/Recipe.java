@@ -2,6 +2,7 @@ package HotelManagement.recipe;
 
 import HotelManagement.ingredients.Ingredients;
 import HotelManagement.spices.SpicesAndSeasonings;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -24,6 +25,7 @@ public class Recipe {
             joinColumns = @JoinColumn(name = "recipe_id"),
             inverseJoinColumns = @JoinColumn(name = "ingredient_id")
     )
+    @JsonManagedReference
     private Set<Ingredients> ingredientsSet = new HashSet<>();
 
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -32,8 +34,8 @@ public class Recipe {
             joinColumns = @JoinColumn(name = "recipe_id"),
             inverseJoinColumns = @JoinColumn(name = "spice_id")
     )
+    @JsonManagedReference
     private Set<SpicesAndSeasonings> spicesSet = new HashSet<>();
 
     private String deletedFlag = "N";
 }
-

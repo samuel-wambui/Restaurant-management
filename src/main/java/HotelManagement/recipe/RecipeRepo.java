@@ -18,19 +18,20 @@ public interface RecipeRepo extends JpaRepository<Recipe, Long > {
             "WHERE r.deletedFlag = :deletedFlag")
     List<Recipe> findAllByDeletedFlag(@Param("deletedFlag") String deletedFlag);
 
-        @Query("SELECT new HotelManagement.recipe.RecipeSpiceIngredientCostDTO(" +
-                "r.recipeName, " +
-                "i.name, " +
-                "c1.cost, " +
-                "s.name, " +
-                "c2.cost) " +
-                "FROM Recipe r " +
-                "JOIN r.ingredientsSet i " +
-                "JOIN i.costings c1 " +
-                "JOIN r.spicesSet s " +
-                "JOIN s.costings c2 " +
-                "WHERE r.deletedFlag = 'N'")
-        List<RecipeSpiceIngredientCostDTO> findAllRecipesWithIngredientsAndSpices();
+    @Query("SELECT new HotelManagement.recipe.RecipeSpiceIngredientCostDTO(" +
+            "r.recipeName, " +
+            "i.name, " +
+            "c1.cost, " +
+            "s.name, " +
+            "c2.cost) " +
+            "FROM Recipe r " +
+            "LEFT JOIN r.ingredientsSet i " +
+            "LEFT JOIN i.costing c1 " +
+            "LEFT JOIN r.spicesSet s " +
+            "LEFT JOIN s.costing c2 " +
+            "WHERE r.deletedFlag = 'N' AND (i.deletedFlag = 'N' OR s.deletedFlag = 'N')")
+    List<RecipeSpiceIngredientCostDTO> findAllRecipesWithIngredientsAndSpices();
+
 
     Optional<Recipe> findByIdAndDeletedFlag(Long id, String deletedFlag);
 }
