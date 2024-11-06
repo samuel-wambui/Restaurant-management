@@ -38,9 +38,13 @@ public class RecipeController {
     }
 
     @GetMapping("/details")  // Endpoint to retrieve recipes with ingredients and spices
-    public ResponseEntity<List<RecipeSpiceIngredientCostDTO>> getAllRecipesWithIngredientsAndSpices() {
+    public ResponseEntity<ApiResponse<List<RecipeSpiceIngredientCostDTO>>> getAllRecipesWithIngredientsAndSpices() {
+        ApiResponse response = new ApiResponse<>();
         List<RecipeSpiceIngredientCostDTO> recipesWithDetails = makingRecipeService.getAllRecipesWithIngredientsAndSpices();
-        return ResponseEntity.ok(recipesWithDetails); // Return the list with HTTP 200 OK
+        response.setMessage("recipes retrived successfully");
+        response.setStatusCode(HttpStatus.OK.value());
+        response.setEntity(recipesWithDetails);
+        return new ResponseEntity<>(response,HttpStatus.FOUND) ; // Return the list with HTTP 200 OK
     }
 
 

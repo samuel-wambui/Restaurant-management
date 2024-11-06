@@ -11,7 +11,6 @@ public class CostingDto {
     private String quantity;
     private Double cost;
     private CostCategory costCategory;
-    private Long spiceId;
-    private Long ingredientId;
+    private Long commodityId;
 }
 

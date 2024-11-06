@@ -1,15 +1,18 @@
 package HotelManagement.recipe;
 
 import HotelManagement.ingredients.Ingredients;
+import HotelManagement.menu.Menu;
 import HotelManagement.spices.SpicesAndSeasonings;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
-
 import java.util.HashSet;
 import java.util.Set;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "recipe")
 public class Recipe {
@@ -25,7 +28,7 @@ public class Recipe {
             joinColumns = @JoinColumn(name = "recipe_id"),
             inverseJoinColumns = @JoinColumn(name = "ingredient_id")
     )
-    @JsonManagedReference
+    @JsonIgnore // Ignore serialization to prevent recursion
     private Set<Ingredients> ingredientsSet = new HashSet<>();
 
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -34,8 +37,13 @@ public class Recipe {
             joinColumns = @JoinColumn(name = "recipe_id"),
             inverseJoinColumns = @JoinColumn(name = "spice_id")
     )
-    @JsonManagedReference
+    @JsonIgnore // Ignore serialization to prevent recursion
     private Set<SpicesAndSeasonings> spicesSet = new HashSet<>();
 
     private String deletedFlag = "N";
+
+    @ManyToMany(mappedBy = "recipeSet")
+    @JsonIgnore // Prevent recursion with Recipe
+    private Set<Menu> recipes = new HashSet<>();
 }
+

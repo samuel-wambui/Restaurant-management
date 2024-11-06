@@ -1,14 +1,14 @@
 package HotelManagement.menu;
 
+import HotelManagement.ingredients.Ingredients;
 import HotelManagement.recipe.Recipe;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Data
@@ -25,4 +25,13 @@ public class Menu {
 
     private String deletedFlag ="N";
 //    private Set<Recipe> recipes;
+
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "menu_recipes",
+            joinColumns = @JoinColumn(name = "menu_id"),
+            inverseJoinColumns = @JoinColumn(name = "recipe_id")
+    )
+    @JsonIgnore // Ignore serialization to prevent recursion
+    private Set<Recipe> recipeSet = new HashSet<>();
 }

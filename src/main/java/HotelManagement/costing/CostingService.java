@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class CostingService {
@@ -33,15 +34,33 @@ public class CostingService {
         cost.setCost(costingDto.getCost());
         cost.setCostCategory(costingDto.getCostCategory());
 
-        // Check and set the appropriate reference for ingredient or spice
         try {
+            // Check and set the appropriate reference for ingredient or spice
             if (costingDto.getCostCategory() == CostCategory.INGREDIENT) {
-                Ingredients ingredient = findIngredient(costingDto.getIngredientId());
-                cost.setIngredient(ingredient);
+                Optional<Ingredients> optionalIngredient =
+                        ingredientsRepo.findByIdAndDeletedFlag(costingDto.getCommodityId(), "N");
+
+                if (optionalIngredient.isPresent()) {
+                    Ingredients ingredient = optionalIngredient.get();
+                    cost.setCommodityId(ingredient.getId());
+                } else {
+                    logger.warn("Ingredient with ID {} not found or marked as deleted", costingDto.getCommodityId());
+                    throw new IllegalArgumentException("Ingredient not found or marked as deleted");
+                }
+
             } else if (costingDto.getCostCategory() == CostCategory.SPICES_OR_SEASONINGS) {
-                SpicesAndSeasonings spice = findSpice(costingDto.getSpiceId());
-                cost.setSpicesAndSeasonings(spice);
+                Optional<SpicesAndSeasonings> optionalSpice =
+                        spicesRepo.findByIdAndDeletedFlag(costingDto.getCommodityId() , "N");
+
+                if (optionalSpice.isPresent()) {
+                    SpicesAndSeasonings spice = optionalSpice.get();
+                    cost.setCommodityId(spice.getId());
+                } else {
+                    logger.warn("Spice or seasoning with ID {} not found or marked as deleted", costingDto.getCommodityId());
+                    throw new IllegalArgumentException("Spice or seasoning not found or marked as deleted");
+                }
             } else {
+                logger.warn("Invalid cost category: {}", costingDto.getCostCategory());
                 throw new IllegalArgumentException("Invalid cost category");
             }
         } catch (IllegalArgumentException e) {
@@ -49,10 +68,11 @@ public class CostingService {
             throw e; // rethrow to be handled by controller
         }
 
-        logger.info("Cost saved: {}", cost);
+        logger.info("Cost saved successfully: {}", cost);
         // Save and return the new Costing entity
         return costingRepo.save(cost);
     }
+
 
     public List<Costing> findAllCosts() {
         logger.info("Fetching all costs");
@@ -77,22 +97,38 @@ public class CostingService {
 
         try {
             if (costingDto.getCostCategory() == CostCategory.INGREDIENT) {
-                Ingredients ingredient = findIngredient(costingDto.getIngredientId());
-                existingCost.setIngredient(ingredient);
-                existingCost.setSpicesAndSeasonings(null);
+                Optional<Ingredients> optionalIngredients =
+                        ingredientsRepo.findByIdAndDeletedFlag(costingDto.getCommodityId(), "N");
+
+                if (optionalIngredients.isPresent()) {
+                    Ingredients ingredient = optionalIngredients.get();
+                    existingCost.setCommodityId(ingredient.getId());
+                } else {
+                    logger.warn("Ingredient with ID {} not found or marked as deleted", costingDto.getCommodityId());
+                    throw new IllegalArgumentException("Ingredient not found");
+                }
+
             } else if (costingDto.getCostCategory() == CostCategory.SPICES_OR_SEASONINGS) {
-                SpicesAndSeasonings spice = findSpice(costingDto.getSpiceId());
-                existingCost.setSpicesAndSeasonings(spice);
-                existingCost.setIngredient(null);
+                Optional<SpicesAndSeasonings> optionalSpicesAndSeasonings =
+                        spicesRepo.findByIdAndDeletedFlag(costingDto.getCommodityId(), "N");
+
+                if (optionalSpicesAndSeasonings.isPresent()) {
+                    SpicesAndSeasonings spicesAndSeasonings = optionalSpicesAndSeasonings.get();
+                    existingCost.setCommodityId(spicesAndSeasonings.getId());
+                } else {
+                    logger.warn("Spice or seasoning with ID {} not found or marked as deleted", costingDto.getCommodityId());
+                    throw new IllegalArgumentException("Spice or seasoning not found");
+                }
             }
         } catch (IllegalArgumentException e) {
             logger.error("Error updating cost: {}", e.getMessage());
             throw e; // rethrow to be handled by controller
         }
 
-        logger.info("Cost updated: {}", existingCost);
+        logger.info("Cost updated successfully: {}", existingCost);
         return costingRepo.save(existingCost);
     }
+
 
     public void deleteCost(Long id) {
         logger.info("Deleting cost with ID: {}", id);
@@ -113,25 +149,6 @@ public class CostingService {
         if (costingDto.getQuantity() == null) {
             throw new IllegalArgumentException("Quantity must not be null");
         }
-
-        // Parse quantity from String to Integer
-        try {
-            int quantity = Integer.parseInt(costingDto.getQuantity());
-            if (quantity < 0) {
-                throw new IllegalArgumentException("Quantity must not be negative");
-            }
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Quantity must be a valid number");
-        }
     }
 
-    private Ingredients findIngredient(Long ingredientId) {
-        return ingredientsRepo.findById(ingredientId)
-                .orElseThrow(() -> new IllegalArgumentException("Ingredient not found with ID: " + ingredientId));
-    }
-
-    private SpicesAndSeasonings findSpice(Long spiceId) {
-        return spicesRepo.findById(spiceId)
-                .orElseThrow(() -> new IllegalArgumentException("Spice not found with ID: " + spiceId));
-    }
 }

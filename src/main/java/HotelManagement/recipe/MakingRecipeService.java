@@ -1,9 +1,12 @@
 package HotelManagement.recipe;
 
+import HotelManagement.costing.CostingService;
 import HotelManagement.ingredients.Ingredients;
 import HotelManagement.ingredients.IngredientsRepo;
 import HotelManagement.spices.SpicesAndSeasonings;
 import HotelManagement.spices.SpicesAndSeasoningsRepo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,31 +26,50 @@ public class MakingRecipeService {
 
     @Autowired
     private SpicesAndSeasoningsRepo spicesRepo;
-
+    private static final Logger logger = LoggerFactory.getLogger(CostingService.class);
     // Create a new recipe
     public Recipe addRecipe(RecipeDto recipeDto) {
         Recipe recipe = new Recipe();
         recipe.setRecipeName(recipeDto.getRecipeName());
 
+        // Initialize sets to hold ingredients and spices
         Set<Ingredients> ingredientsSet = new HashSet<>();
+        Set<SpicesAndSeasonings> spicesSet = new HashSet<>();
+
+        // Add ingredients based on provided IDs
         if (recipeDto.getIngredientIds() != null) {
             for (Long ingredientId : recipeDto.getIngredientIds()) {
-                ingredientsRepo.findByIdAndDeletedFlag(ingredientId, "N").ifPresent(ingredientsSet::add);
+                Optional<Ingredients> ingredientOpt = ingredientsRepo.findByIdAndDeletedFlag(ingredientId, "N");
+                if (ingredientOpt.isPresent()) {
+                    ingredientsSet.add(ingredientOpt.get());
+                } else {
+                    logger.warn("Ingredient with ID {} not found or marked as deleted", ingredientId);
+                }
             }
         }
 
-        Set<SpicesAndSeasonings> spicesSet = new HashSet<>();
+        // Add spices based on provided IDs
         if (recipeDto.getSpiceIds() != null) {
             for (Long spiceId : recipeDto.getSpiceIds()) {
-                spicesRepo.findByIdAndDeletedFlag(spiceId, "N").ifPresent(spicesSet::add);
+                Optional<SpicesAndSeasonings> spiceOpt = spicesRepo.findByIdAndDeletedFlag(spiceId, "N");
+                if (spiceOpt.isPresent()) {
+                    spicesSet.add(spiceOpt.get());
+                } else {
+                    logger.warn("Spice with ID {} not found or marked as deleted", spiceId);
+                }
             }
         }
 
+        // Set ingredients and spices sets in the Recipe
         recipe.setIngredientsSet(ingredientsSet);
         recipe.setSpicesSet(spicesSet);
 
-        return recipeRepo.save(recipe);
+        // Save the recipe and return
+        Recipe savedRecipe = recipeRepo.save(recipe);
+        logger.info("Recipe saved with ID: {} and name: {}", savedRecipe.getId(), savedRecipe.getRecipeName());
+        return savedRecipe;
     }
+
 
 
     // Read a recipe by ID
@@ -59,9 +81,19 @@ public class MakingRecipeService {
     public Iterable<Recipe> getAllRecipes() {
         return (Iterable<Recipe>) recipeRepo.findAllByDeletedFlag("N");
     }
-   public List<RecipeSpiceIngredientCostDTO> getAllRecipesWithIngredientsAndSpices() {
-       return recipeRepo.findAllRecipesWithIngredientsAndSpices();
-   }
+
+
+    public List<RecipeSpiceIngredientCostDTO> getAllRecipesWithIngredientsAndSpices() {
+        // Fetch projections from the repository
+        List<RecipeSpiceIngredientCostProjection> projections = recipeRepo.findAllRecipesWithIngredientsAndSpices();
+
+        // Convert projections to DTOs, ensuring proper aggregation by recipe ID
+        return RecipeSpiceIngredientCostDTO.fromProjections(projections);
+    }
+
+
+
+
     // Update an existing recipe
     public Recipe updateRecipe(Long id, RecipeDto recipeDto) {
         // Find the recipe by ID and check if it's not deleted
