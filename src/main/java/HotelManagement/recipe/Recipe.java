@@ -1,10 +1,10 @@
 package HotelManagement.recipe;
 
-import HotelManagement.ingredients.Ingredients;
+import HotelManagement.foodStock.FoodStock;
 import HotelManagement.menu.Menu;
 import HotelManagement.spices.SpicesAndSeasonings;
 import jakarta.persistence.*;
-import lombok.Data;
+
 import java.util.HashSet;
 import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -29,7 +29,7 @@ public class Recipe {
             inverseJoinColumns = @JoinColumn(name = "ingredient_id")
     )
     @JsonIgnore // Ignore serialization to prevent recursion
-    private Set<Ingredients> ingredientsSet = new HashSet<>();
+    private Set<FoodStock> foodStockSet = new HashSet<>();
 
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinTable(

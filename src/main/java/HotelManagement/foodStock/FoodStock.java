@@ -1,6 +1,5 @@
-package HotelManagement.ingredients;
+package HotelManagement.foodStock;
 
-import HotelManagement.costing.Costing;
 import HotelManagement.recipe.Recipe;
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,7 +13,7 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-public class Ingredients {
+public class FoodStock {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

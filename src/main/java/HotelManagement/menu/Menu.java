@@ -1,6 +1,5 @@
 package HotelManagement.menu;
 
-import HotelManagement.ingredients.Ingredients;
 import HotelManagement.recipe.Recipe;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;

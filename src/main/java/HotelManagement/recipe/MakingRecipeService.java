@@ -1,8 +1,8 @@
 package HotelManagement.recipe;
 
 import HotelManagement.costing.CostingService;
-import HotelManagement.ingredients.Ingredients;
-import HotelManagement.ingredients.IngredientsRepo;
+import HotelManagement.foodStock.FoodStock;
+import HotelManagement.foodStock.FoodStockRepo;
 import HotelManagement.spices.SpicesAndSeasonings;
 import HotelManagement.spices.SpicesAndSeasoningsRepo;
 import org.slf4j.Logger;
@@ -21,8 +21,9 @@ public class MakingRecipeService {
     @Autowired
     private RecipeRepo recipeRepo;
 
+
     @Autowired
-    private IngredientsRepo ingredientsRepo;
+    private FoodStockRepo foodStockRepo;
 
     @Autowired
     private SpicesAndSeasoningsRepo spicesRepo;
@@ -33,15 +34,15 @@ public class MakingRecipeService {
         recipe.setRecipeName(recipeDto.getRecipeName());
 
         // Initialize sets to hold ingredients and spices
-        Set<Ingredients> ingredientsSet = new HashSet<>();
+        Set<FoodStock> foodStockSet = new HashSet<>();
         Set<SpicesAndSeasonings> spicesSet = new HashSet<>();
 
         // Add ingredients based on provided IDs
         if (recipeDto.getIngredientIds() != null) {
             for (Long ingredientId : recipeDto.getIngredientIds()) {
-                Optional<Ingredients> ingredientOpt = ingredientsRepo.findByIdAndDeletedFlag(ingredientId, "N");
+                Optional<FoodStock> ingredientOpt = foodStockRepo.findByIdAndDeletedFlag(ingredientId, "N");
                 if (ingredientOpt.isPresent()) {
-                    ingredientsSet.add(ingredientOpt.get());
+                    foodStockSet.add(ingredientOpt.get());
                 } else {
                     logger.warn("Ingredient with ID {} not found or marked as deleted", ingredientId);
                 }
@@ -61,7 +62,7 @@ public class MakingRecipeService {
         }
 
         // Set ingredients and spices sets in the Recipe
-        recipe.setIngredientsSet(ingredientsSet);
+        recipe.setFoodStockSet(foodStockSet);
         recipe.setSpicesSet(spicesSet);
 
         // Save the recipe and return
@@ -108,16 +109,16 @@ public class MakingRecipeService {
         recipe.setRecipeName(recipeDto.getRecipeName());
 
         // Update ingredients set
-        Set<Ingredients> ingredientsSet = new HashSet<>();
+        Set<FoodStock> foodStockSet = new HashSet<>();
         for (Long ingredientId : recipeDto.getIngredientIds()) {
-            Optional<Ingredients> optionalIngredient = ingredientsRepo.findById(ingredientId);
+            Optional<FoodStock> optionalIngredient = foodStockRepo.findById(ingredientId);
             if (optionalIngredient.isPresent()) {
-                ingredientsSet.add(optionalIngredient.get());
+                foodStockSet.add(optionalIngredient.get());
             } else {
                 throw new IllegalArgumentException("Ingredient with ID " + ingredientId + " not found");
             }
         }
-        recipe.setIngredientsSet(ingredientsSet);
+        recipe.setFoodStockSet(foodStockSet);
 
         // Update spices set
         Set<SpicesAndSeasonings> spicesSet = new HashSet<>();

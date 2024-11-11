@@ -12,5 +12,6 @@ public class CostingDto {
     private Double cost;
     private CostCategory costCategory;
     private Long commodityId;
+    private Long recipeId;
 }
 

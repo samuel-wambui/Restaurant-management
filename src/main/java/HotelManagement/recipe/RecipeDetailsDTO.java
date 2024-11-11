@@ -1,6 +1,6 @@
 package HotelManagement.recipe;
 
-import HotelManagement.ingredients.IngredientDetailDTO;
+import HotelManagement.foodStock.IngredientDetailDTO;
 import HotelManagement.spices.SpiceDetailDTO;
 
 import java.util.List;

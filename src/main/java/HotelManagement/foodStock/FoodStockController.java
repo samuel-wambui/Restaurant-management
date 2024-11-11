@@ -1,7 +1,6 @@
-package HotelManagement.ingredients;
+package HotelManagement.foodStock;
 
 import HotelManagement.ApiResponse.ApiResponse;
-import HotelManagement.recipe.Recipe;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,16 +11,16 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/ingredients")
-public class IngredientsController {
+public class FoodStockController {
 
     @Autowired
-    private IngredientsService ingredientsService;
+    private FoodStockService foodStockService;
 
     // Create a new ingredient
     @PostMapping("createIngredient")
-    public ResponseEntity<ApiResponse<Ingredients>> createIngredient(@RequestBody IngredientsDto ingredient) {
+    public ResponseEntity<ApiResponse<FoodStock>> createIngredient(@RequestBody FoodStockDto ingredient) {
         ApiResponse response = new ApiResponse<>();
-        Ingredients savedIngredient = ingredientsService.createIngredient(ingredient);
+        FoodStock savedIngredient = foodStockService.createIngredient(ingredient);
         response.setMessage("Ingredient add successfully");
         response.setStatusCode(HttpStatus.OK.value());
         response.setEntity(savedIngredient);
@@ -30,9 +29,9 @@ public class IngredientsController {
 
     // Get an ingredient by ID
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Ingredients>> getIngredientById(@PathVariable Long id) {
-        ApiResponse<Ingredients> response = new ApiResponse<>();
-        Optional<Ingredients> ingredient = ingredientsService.getIngredientById(id);
+    public ResponseEntity<ApiResponse<FoodStock>> getIngredientById(@PathVariable Long id) {
+        ApiResponse<FoodStock> response = new ApiResponse<>();
+        Optional<FoodStock> ingredient = foodStockService.getIngredientById(id);
 
         if (ingredient.isPresent()) {
             response.setMessage("Retrieved Ingredient Successfully");
@@ -49,9 +48,9 @@ public class IngredientsController {
 
     // Get all ingredients
     @GetMapping
-    public ResponseEntity<ApiResponse<List<Ingredients>>> getAllIngredients() {
-        ApiResponse<List<Ingredients>> response = new ApiResponse<>();
-        List<Ingredients> ingredients = ingredientsService.getAllIngredients();
+    public ResponseEntity<ApiResponse<List<FoodStock>>> getAllIngredients() {
+        ApiResponse<List<FoodStock>> response = new ApiResponse<>();
+        List<FoodStock> ingredients = foodStockService.getAllIngredients();
 
         if (ingredients.isEmpty()) {
             response.setMessage("No ingredients found.");
@@ -70,11 +69,11 @@ public class IngredientsController {
 
     // Update an ingredient by ID
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Ingredients>> updateIngredient(
-            @PathVariable Long id, @RequestBody Ingredients updatedIngredient) {
-        ApiResponse<Ingredients> response = new ApiResponse<>();
+    public ResponseEntity<ApiResponse<FoodStock>> updateIngredient(
+            @PathVariable Long id, @RequestBody FoodStock updatedIngredient) {
+        ApiResponse<FoodStock> response = new ApiResponse<>();
         try {
-            Ingredients updated = ingredientsService.updateIngredient(id, updatedIngredient);
+            FoodStock updated = foodStockService.updateIngredient(id, updatedIngredient);
             response.setMessage("Ingredient updated successfully");
             response.setEntity(updated);
             response.setStatusCode(HttpStatus.OK.value());
@@ -97,7 +96,7 @@ public class IngredientsController {
         ApiResponse<Void> response = new ApiResponse<>();
 
         try {
-            ingredientsService.deleteIngredient(id);
+            foodStockService.deleteIngredient(id);
             response.setMessage("Ingredient deleted successfully.");
             response.setEntity(null);
             response.setStatusCode(HttpStatus.NO_CONTENT.value());

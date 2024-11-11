@@ -1,10 +1,7 @@
 package HotelManagement.costing;
 
-import HotelManagement.ingredients.Ingredients;
-import HotelManagement.spices.SpicesAndSeasonings;
 import jakarta.persistence.*;
 import lombok.*;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Getter
@@ -24,6 +21,8 @@ public class Costing {
     private Long commodityId;
 
     private String deletedFlag = "N";
+
+    private Long recipeId;
 
 
 }

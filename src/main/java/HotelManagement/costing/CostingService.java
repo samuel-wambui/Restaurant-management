@@ -1,7 +1,10 @@
 package HotelManagement.costing;
 
-import HotelManagement.ingredients.Ingredients;
-import HotelManagement.ingredients.IngredientsRepo;
+import HotelManagement.exemption.ExemptionNotFound;
+import HotelManagement.foodStock.FoodStock;
+import HotelManagement.foodStock.FoodStockRepo;
+import HotelManagement.recipe.Recipe;
+import HotelManagement.recipe.RecipeRepo;
 import HotelManagement.spices.SpicesAndSeasonings;
 import HotelManagement.spices.SpicesAndSeasoningsRepo;
 import org.slf4j.Logger;
@@ -20,57 +23,93 @@ public class CostingService {
     private CostingRepo costingRepo;
 
     @Autowired
-    private IngredientsRepo ingredientsRepo;
+    private FoodStockRepo foodStockRepo;
 
     @Autowired
     private SpicesAndSeasoningsRepo spicesRepo;
+    @Autowired
+    private RecipeRepo recipeRepo;
 
     public Costing saveCost(CostingDto costingDto) {
-        validateCostingDto(costingDto); // Validate input
+        // Validate input
+        validateCostingDto(costingDto);
 
-        // Create a new Costing instance
-        Costing cost = new Costing();
-        cost.setQuantity(costingDto.getQuantity());
-        cost.setCost(costingDto.getCost());
-        cost.setCostCategory(costingDto.getCostCategory());
-
-        try {
-            // Check and set the appropriate reference for ingredient or spice
-            if (costingDto.getCostCategory() == CostCategory.INGREDIENT) {
-                Optional<Ingredients> optionalIngredient =
-                        ingredientsRepo.findByIdAndDeletedFlag(costingDto.getCommodityId(), "N");
-
-                if (optionalIngredient.isPresent()) {
-                    Ingredients ingredient = optionalIngredient.get();
-                    cost.setCommodityId(ingredient.getId());
-                } else {
-                    logger.warn("Ingredient with ID {} not found or marked as deleted", costingDto.getCommodityId());
-                    throw new IllegalArgumentException("Ingredient not found or marked as deleted");
-                }
-
-            } else if (costingDto.getCostCategory() == CostCategory.SPICES_OR_SEASONINGS) {
-                Optional<SpicesAndSeasonings> optionalSpice =
-                        spicesRepo.findByIdAndDeletedFlag(costingDto.getCommodityId() , "N");
-
-                if (optionalSpice.isPresent()) {
-                    SpicesAndSeasonings spice = optionalSpice.get();
-                    cost.setCommodityId(spice.getId());
-                } else {
-                    logger.warn("Spice or seasoning with ID {} not found or marked as deleted", costingDto.getCommodityId());
-                    throw new IllegalArgumentException("Spice or seasoning not found or marked as deleted");
-                }
-            } else {
-                logger.warn("Invalid cost category: {}", costingDto.getCostCategory());
-                throw new IllegalArgumentException("Invalid cost category");
-            }
-        } catch (IllegalArgumentException e) {
-            logger.error("Error saving cost: {}", e.getMessage());
-            throw e; // rethrow to be handled by controller
+        Optional<Recipe> recipeOptional = recipeRepo.findByIdAndDeletedFlag(costingDto.getRecipeId(), "N");
+        if (recipeOptional.isEmpty()) {
+            throw new ExemptionNotFound("Recipe", "ID", costingDto.getRecipeId());
         }
 
-        logger.info("Cost saved successfully: {}", cost);
-        // Save and return the new Costing entity
-        return costingRepo.save(cost);
+        Recipe recipe = recipeOptional.get();
+        Costing savedCost = null;
+
+
+        // Check if cost category is INGREDIENT
+        if (costingDto.getCostCategory() == CostCategory.INGREDIENT) {
+            // Find the ingredient in the recipe
+            Optional<FoodStock> ingredientOpt = recipe.getFoodStockSet().stream()
+                    .filter(ingredient -> ingredient.getId().equals(costingDto.getCommodityId()))
+                    .findFirst();
+
+            if (ingredientOpt.isEmpty()) {
+                throw new ExemptionNotFound("Spice not found in " + recipe.getRecipeName(),"","");
+            }
+
+            FoodStock ingredient = ingredientOpt.get();
+            Optional<Costing> existingCostingOpt = costingRepo.findByRecipeIdAndCommodityIdAndCostCategory(
+                    recipe.getId(), ingredient.getId(), CostCategory.INGREDIENT);
+
+            // Update or create new entry based on existence
+            Costing ingredientCost;
+            if (existingCostingOpt.isPresent()) {
+                ingredientCost = existingCostingOpt.get();
+                ingredientCost.setCost(costingDto.getCost());
+                ingredientCost.setQuantity(costingDto.getQuantity());
+            } else {
+                ingredientCost = new Costing();
+                ingredientCost.setCommodityId(ingredient.getId());
+                ingredientCost.setQuantity(costingDto.getQuantity());
+                ingredientCost.setCost(costingDto.getCost());
+                ingredientCost.setCostCategory(CostCategory.INGREDIENT);
+                ingredientCost.setRecipeId(recipe.getId());
+                ingredientCost.setDeletedFlag("N");
+            }
+
+            savedCost = costingRepo.save(ingredientCost);
+
+        } else if (costingDto.getCostCategory() == CostCategory.SPICES_OR_SEASONINGS) {
+            // Check if the spice exists in the recipe
+            Optional<SpicesAndSeasonings> spiceOpt = recipe.getSpicesSet().stream()
+                    .filter(spice -> spice.getId().equals(costingDto.getCommodityId()))
+                    .findFirst();
+
+            if (spiceOpt.isEmpty()) {
+                throw new ExemptionNotFound("Spice not found in " + recipe.getRecipeName(),"","");
+            }
+
+            SpicesAndSeasonings spice = spiceOpt.get();
+            Optional<Costing> existingCostingOpt = costingRepo.findByRecipeIdAndCommodityIdAndCostCategory(
+                    recipe.getId(), spice.getId(), CostCategory.SPICES_OR_SEASONINGS);
+
+            // Update or create new entry based on existence
+            Costing spiceCost;
+            if (existingCostingOpt.isPresent()) {
+                spiceCost = existingCostingOpt.get();
+                spiceCost.setCost(costingDto.getCost());
+                spiceCost.setQuantity(costingDto.getQuantity());
+            } else {
+                spiceCost = new Costing();
+                spiceCost.setCommodityId(spice.getId());
+                spiceCost.setQuantity(costingDto.getQuantity());
+                spiceCost.setCost(costingDto.getCost());
+                spiceCost.setCostCategory(CostCategory.SPICES_OR_SEASONINGS);
+                spiceCost.setRecipeId(recipe.getId());
+                spiceCost.setDeletedFlag("N");
+            }
+
+            savedCost = costingRepo.save(spiceCost);
+        }
+
+        return savedCost;
     }
 
 
@@ -97,11 +136,11 @@ public class CostingService {
 
         try {
             if (costingDto.getCostCategory() == CostCategory.INGREDIENT) {
-                Optional<Ingredients> optionalIngredients =
-                        ingredientsRepo.findByIdAndDeletedFlag(costingDto.getCommodityId(), "N");
+                Optional<FoodStock> optionalIngredients =
+                        foodStockRepo.findByIdAndDeletedFlag(costingDto.getCommodityId(), "N");
 
                 if (optionalIngredients.isPresent()) {
-                    Ingredients ingredient = optionalIngredients.get();
+                    FoodStock ingredient = optionalIngredients.get();
                     existingCost.setCommodityId(ingredient.getId());
                 } else {
                     logger.warn("Ingredient with ID {} not found or marked as deleted", costingDto.getCommodityId());

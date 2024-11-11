@@ -4,6 +4,7 @@ import lombok.Data;
 import java.util.*;
 import java.util.stream.Collectors;
 
+
 @Data
 public class RecipeSpiceIngredientCostDTO {
 
@@ -11,26 +12,44 @@ public class RecipeSpiceIngredientCostDTO {
     private String recipeName;
     private List<IngredientSpiceCostDTO> ingredients;
     private List<IngredientSpiceCostDTO> spices;
-    private Double totalIngredientCost;
-    private Double totalSpiceCost;
-    private Double recipeTotalCost; // New field to store total recipe cost
 
-    public RecipeSpiceIngredientCostDTO(Long recipeId, String recipeName, List<IngredientSpiceCostDTO> ingredients,
-                                        List<IngredientSpiceCostDTO> spices, Double totalIngredientCost, Double totalSpiceCost, Double recipeTotalCost) {
+    public RecipeSpiceIngredientCostDTO(Long recipeId, String recipeName, List<IngredientSpiceCostDTO> ingredients, List<IngredientSpiceCostDTO> spices) {
         this.recipeId = recipeId;
         this.recipeName = recipeName;
         this.ingredients = ingredients;
         this.spices = spices;
-        this.totalIngredientCost = totalIngredientCost;
-        this.totalSpiceCost = totalSpiceCost;
-        this.recipeTotalCost = recipeTotalCost;
+    }
+
+    public Double getTotalIngredientCost() {
+        return ingredients.stream()
+                .map(IngredientSpiceCostDTO::getCost)
+                .filter(Objects::nonNull)
+                .reduce(Double::sum)
+                .orElse(null);
+    }
+
+    public Double getTotalSpiceCost() {
+        return spices.stream()
+                .map(IngredientSpiceCostDTO::getCost)
+                .filter(Objects::nonNull)
+                .reduce(Double::sum)
+                .orElse(null);
+    }
+
+    public Double getRecipeTotalCost() {
+        Double totalIngredientCost = getTotalIngredientCost();
+        Double totalSpiceCost = getTotalSpiceCost();
+        if (totalIngredientCost == null || totalSpiceCost == null) {
+            return null;
+        }
+        return totalIngredientCost + totalSpiceCost;
     }
 
     @Data
     public static class IngredientSpiceCostDTO {
         private String name;
         private Double cost;
-        private String quantity; // New field for quantity
+        private String quantity;
 
         public IngredientSpiceCostDTO(String name, Double cost, String quantity) {
             this.name = name;
@@ -39,55 +58,56 @@ public class RecipeSpiceIngredientCostDTO {
         }
     }
 
-    // Updated method to parse names, costs, and quantities
     private static List<IngredientSpiceCostDTO> parseIngredientsOrSpices(String names, String costs, String quantities) {
         List<IngredientSpiceCostDTO> items = new ArrayList<>();
-        if (names != null && costs != null && quantities != null) {
+        if (names != null) {
             String[] nameArray = names.split(",");
-            String[] costArray = costs.split(",");
-            String[] quantityArray = quantities.split(",");
+            String[] costArray = (costs != null) ? costs.split(",") : new String[nameArray.length];
+            String[] quantityArray = (quantities != null) ? quantities.split(",") : new String[nameArray.length];
 
-            int length = Math.min(Math.min(nameArray.length, costArray.length), quantityArray.length);
+            int length = nameArray.length;
             for (int i = 0; i < length; i++) {
                 String name = nameArray[i].trim();
-                String quantity = quantityArray[i].trim();
-                try {
-                    Double cost = Double.parseDouble(costArray[i].trim());
-                    items.add(new IngredientSpiceCostDTO(name, cost, quantity));
-                } catch (NumberFormatException e) {
-                    System.err.println("Invalid cost format for ingredient/spice: " + costArray[i]);
+
+                // Check if quantityArray[i] is not null before trimming
+                String quantity = (i < quantityArray.length && quantityArray[i] != null) ? quantityArray[i].trim() : null;
+
+                Double cost = null;
+                if (i < costArray.length && costArray[i] != null) {
+                    try {
+                        cost = Double.parseDouble(costArray[i].trim());
+                    } catch (NumberFormatException e) {
+                        System.err.println("Invalid cost format for ingredient/spice: " + costArray[i]);
+                    }
                 }
+
+                items.add(new IngredientSpiceCostDTO(name, cost, quantity));
             }
         }
         return items;
     }
 
-    // Updated method to map individual projection to DTO
     public static RecipeSpiceIngredientCostDTO fromProjection(RecipeSpiceIngredientCostProjection projection) {
         List<IngredientSpiceCostDTO> ingredients = parseIngredientsOrSpices(
                 projection.getIngredientNames(),
                 projection.getIndividualIngredientCosts(),
-                projection.getIngredientQuantities() // New quantity field
+                projection.getIngredientQuantities()
         );
 
         List<IngredientSpiceCostDTO> spices = parseIngredientsOrSpices(
                 projection.getSpiceNames(),
                 projection.getIndividualSpiceCosts(),
-                projection.getSpiceQuantities() // New quantity field
+                projection.getSpiceQuantities()
         );
 
         return new RecipeSpiceIngredientCostDTO(
                 projection.getRecipeId(),
                 projection.getRecipeName(),
                 ingredients,
-                spices,
-                projection.getTotalIngredientCost(),
-                projection.getTotalSpiceCost(),
-                projection.getRecipeTotalCost() // Total recipe cost from projection
+                spices
         );
     }
 
-    // Updated method to map list of projections to a list of DTOs
     public static List<RecipeSpiceIngredientCostDTO> fromProjections(List<RecipeSpiceIngredientCostProjection> projections) {
         return projections.stream()
                 .collect(Collectors.groupingBy(RecipeSpiceIngredientCostProjection::getRecipeId))
@@ -106,18 +126,11 @@ public class RecipeSpiceIngredientCostDTO {
                             first.getSpiceQuantities()
                     );
 
-                    Double totalIngredientCost = entry.getValue().stream().mapToDouble(RecipeSpiceIngredientCostProjection::getTotalIngredientCost).sum();
-                    Double totalSpiceCost = entry.getValue().stream().mapToDouble(RecipeSpiceIngredientCostProjection::getTotalSpiceCost).sum();
-                    Double recipeTotalCost = entry.getValue().stream().mapToDouble(RecipeSpiceIngredientCostProjection::getRecipeTotalCost).sum();
-
                     return new RecipeSpiceIngredientCostDTO(
                             first.getRecipeId(),
                             first.getRecipeName(),
                             ingredients,
-                            spices,
-                            totalIngredientCost,
-                            totalSpiceCost,
-                            recipeTotalCost // Calculate recipe total cost
+                            spices
                     );
                 })
                 .collect(Collectors.toList());
