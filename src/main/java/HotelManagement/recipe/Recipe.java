@@ -3,6 +3,7 @@ package HotelManagement.recipe;
 import HotelManagement.foodStock.FoodStock;
 import HotelManagement.menu.Menu;
 import HotelManagement.recipe.missingClause.MissingClauseRecipe;
+import HotelManagement.recipe.todayRecipe.OrderedRecipe;
 import HotelManagement.spices.SpicesAndSeasonings;
 import jakarta.persistence.*;
 
@@ -25,35 +26,33 @@ public class Recipe {
 
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinTable(
-            name = "recipe_ingredients",
+            name = "recipe_ingredients",  // Unique table name
             joinColumns = @JoinColumn(name = "recipe_id"),
             inverseJoinColumns = @JoinColumn(name = "ingredient_id")
     )
-    @JsonIgnore // Ignore serialization to prevent recursion
+    @JsonIgnore
     private Set<FoodStock> foodStockSet = new HashSet<>();
 
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinTable(
-            name = "recipe_spices",
+            name = "recipe_spices",  // Unique table name
             joinColumns = @JoinColumn(name = "recipe_id"),
             inverseJoinColumns = @JoinColumn(name = "spice_id")
     )
-    @JsonIgnore // Ignore serialization to prevent recursion
+    @JsonIgnore
     private Set<SpicesAndSeasonings> spicesSet = new HashSet<>();
 
     private String deletedFlag = "N";
 
-    @ManyToMany(mappedBy = "orderedRecipes")
-    @JsonIgnore // Prevent recursion with Recipe
-    private Set<Menu> menuSet = new HashSet<>();
+    @ManyToMany(mappedBy = "recipeSet")
+    @JsonIgnore
+    private Set<OrderedRecipe> orderedRecipes = new HashSet<>();
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinTable(
-            name = "menu_missing_clause_recipes",
-            joinColumns = @JoinColumn(name = "menu_id"),
-            inverseJoinColumns = @JoinColumn(name = "missing_clause_recipe_id")
+            name = "recipe_missing_clause_recipes",  // Unique table name
+            joinColumns = @JoinColumn(name = "recipe_id"),
+            inverseJoinColumns = @JoinColumn(name = "missing_clause_id")
     )
     private Set<MissingClauseRecipe> missingClauseRecipes = new HashSet<>();
-
 }
-

@@ -1,6 +1,7 @@
 package HotelManagement.costing;
 
-import HotelManagement.exemption.ExemptionNotFound;
+
+import HotelManagement.exemption.ResourceNotFoundException;
 import HotelManagement.foodStock.FoodStock;
 import HotelManagement.foodStock.FoodStockRepo;
 import HotelManagement.recipe.Recipe;
@@ -36,7 +37,7 @@ public class CostingService {
 
         Optional<Recipe> recipeOptional = recipeRepo.findByIdAndDeletedFlag(costingDto.getRecipeId(), "N");
         if (recipeOptional.isEmpty()) {
-            throw new ExemptionNotFound("Recipe", "ID", costingDto.getRecipeId());
+            throw new ResourceNotFoundException("Recipe with id " + costingDto.getRecipeId() + " is not found");
         }
 
         Recipe recipe = recipeOptional.get();
@@ -51,7 +52,7 @@ public class CostingService {
                     .findFirst();
 
             if (ingredientOpt.isEmpty()) {
-                throw new ExemptionNotFound("Spice not found in " + recipe.getRecipeName(),"","");
+                throw new ResourceNotFoundException("Ingredient not found in " + recipe.getRecipeName());
             }
 
             FoodStock ingredient = ingredientOpt.get();
@@ -83,7 +84,7 @@ public class CostingService {
                     .findFirst();
 
             if (spiceOpt.isEmpty()) {
-                throw new ExemptionNotFound("Spice not found in " + recipe.getRecipeName(),"","");
+                throw new ResourceNotFoundException("Spice not found in" + recipe.getRecipeName());
             }
 
             SpicesAndSeasonings spice = spiceOpt.get();

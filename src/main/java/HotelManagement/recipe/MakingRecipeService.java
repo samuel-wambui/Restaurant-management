@@ -84,13 +84,13 @@ public class MakingRecipeService {
     }
 
 
-    public List<RecipeSpiceIngredientCostDTO> getAllRecipesWithIngredientsAndSpices() {
-        // Fetch projections from the repository
-        List<RecipeSpiceIngredientCostProjection> projections = recipeRepo.findAllRecipesWithIngredientsAndSpices();
-
-        // Convert projections to DTOs, ensuring proper aggregation by recipe ID
-        return RecipeSpiceIngredientCostDTO.fromProjections(projections);
-    }
+//    public List<RecipeSpiceIngredientCostDTO> getAllRecipesWithIngredientsAndSpices() {
+//        // Fetch projections from the repository
+//        List<RecipeSpiceIngredientCostProjection> projections = recipeRepo.findAllRecipesWithIngredientsAndSpices();
+//
+//        // Convert projections to DTOs, ensuring proper aggregation by recipe ID
+//        return RecipeSpiceIngredientCostDTO.fromProjections(projections);
+//    }
 
 
 
