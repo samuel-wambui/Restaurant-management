@@ -2,6 +2,7 @@ package HotelManagement.recipe;
 
 import HotelManagement.foodStock.FoodStock;
 import HotelManagement.menu.Menu;
+import HotelManagement.recipe.missingClause.MissingClauseRecipe;
 import HotelManagement.spices.SpicesAndSeasonings;
 import jakarta.persistence.*;
 
@@ -42,8 +43,17 @@ public class Recipe {
 
     private String deletedFlag = "N";
 
-    @ManyToMany(mappedBy = "recipeSet")
+    @ManyToMany(mappedBy = "orderedRecipes")
     @JsonIgnore // Prevent recursion with Recipe
-    private Set<Menu> recipes = new HashSet<>();
+    private Set<Menu> menuSet = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "menu_missing_clause_recipes",
+            joinColumns = @JoinColumn(name = "menu_id"),
+            inverseJoinColumns = @JoinColumn(name = "missing_clause_recipe_id")
+    )
+    private Set<MissingClauseRecipe> missingClauseRecipes = new HashSet<>();
+
 }
 

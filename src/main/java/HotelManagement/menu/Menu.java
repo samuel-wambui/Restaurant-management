@@ -1,6 +1,8 @@
 package HotelManagement.menu;
 
 import HotelManagement.recipe.Recipe;
+import HotelManagement.recipe.missingClause.MissingClauseRecipe;
+import HotelManagement.recipe.todayRecipe.OrderedRecipe;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -32,5 +34,9 @@ public class Menu {
             inverseJoinColumns = @JoinColumn(name = "recipe_id")
     )
     @JsonIgnore // Ignore serialization to prevent recursion
-    private Set<Recipe> recipeSet = new HashSet<>();
+    private Set<OrderedRecipe> orderedRecipes = new HashSet<>();
+
+
 }
+
+
