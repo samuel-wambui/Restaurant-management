@@ -48,5 +48,5 @@ public class MissingClauseRecipe {
     @JsonIgnore
     private Set<OrderedRecipe> recipes = new HashSet<>();
 
-    private Long orderedRecipe;
+
 }

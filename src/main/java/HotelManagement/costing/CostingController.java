@@ -21,7 +21,7 @@ public class CostingController {
 
         try {
             // Delegate to service to handle saving and validations
-            Costing cost = costingService.saveCost(costingDto);
+            Costing cost = costingService.saveFoodStockCost(costingDto);
             response.setMessage("Cost saved successfully");
             response.setStatusCode(HttpStatus.CREATED.value());
             response.setEntity(cost);

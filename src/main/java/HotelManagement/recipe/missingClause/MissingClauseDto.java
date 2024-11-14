@@ -9,7 +9,7 @@ import java.util.Set;
 @Data
 public class MissingClauseDto {
     private String missingClauseName;
-    private Set<FoodStock> foodStockSet;
-    private Set<SpicesAndSeasonings> spicesSet;
+    private Set<Long> foodStockSet;
+    private Set<Long> spicesSet;
     private Long orderedRecipe;
 }

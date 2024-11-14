@@ -17,5 +17,4 @@ public class UnitMeasurement {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String unitName;
-    private String piecesPerUnit;
 }

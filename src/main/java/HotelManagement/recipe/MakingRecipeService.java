@@ -40,7 +40,7 @@ public class MakingRecipeService {
         // Add ingredients based on provided IDs
         if (recipeDto.getIngredientIds() != null) {
             for (Long ingredientId : recipeDto.getIngredientIds()) {
-                Optional<FoodStock> ingredientOpt = foodStockRepo.findByIdAndDeletedFlag(ingredientId, "N");
+                Optional<FoodStock> ingredientOpt = foodStockRepo.findByIdAndDeletedFlagAndExpired(ingredientId, "N", false);
                 if (ingredientOpt.isPresent()) {
                     foodStockSet.add(ingredientOpt.get());
                 } else {

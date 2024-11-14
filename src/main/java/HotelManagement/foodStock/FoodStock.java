@@ -2,10 +2,12 @@ package HotelManagement.foodStock;
 
 import HotelManagement.recipe.Recipe;
 import HotelManagement.recipe.missingClause.MissingClauseRecipe;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -31,6 +33,13 @@ public class FoodStock {
 
 
     private String deletedFlag = "N";
+    private String depletedFlag= "N";
+    private String stockNumber;
+    @JsonFormat(pattern = "dd/MM/yyyy 'Time:' HH:mm:ss")
+    private LocalDateTime purchaseDate;
+    @JsonFormat(pattern = "dd/MM/yyyy 'Time:' HH:mm:ss")
+    private LocalDateTime expiryDate;
+    private boolean expired= false;
 
 
 }

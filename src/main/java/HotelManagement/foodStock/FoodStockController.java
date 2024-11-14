@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,23 +33,66 @@ public class FoodStockController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<FoodStock>> getIngredientById(@PathVariable Long id) {
         ApiResponse<FoodStock> response = new ApiResponse<>();
-        Optional<FoodStock> ingredient = foodStockService.getIngredientById(id);
+        try {
+            Optional<FoodStock> ingredient = foodStockService.getIngredientById(id);
 
-        if (ingredient.isPresent()) {
-            response.setMessage("Retrieved Ingredient Successfully");
-            response.setStatusCode(HttpStatus.OK.value());
-            response.setEntity(ingredient.get());
-            return new ResponseEntity<>(response, HttpStatus.OK);
-        } else {
-            response.setMessage("Ingredient with ID " + id + " not found");
-            response.setStatusCode(HttpStatus.NOT_FOUND.value());
-            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            if (ingredient.isPresent()) {
+                response.setMessage("Retrieved Ingredient Successfully");
+                response.setStatusCode(HttpStatus.OK.value());
+                response.setEntity(ingredient.get());
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            } else {
+                response.setMessage("Ingredient with ID " + id + " not found");
+                response.setStatusCode(HttpStatus.NOT_FOUND.value());
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            }
+        } catch (RuntimeException e) {
+            response.setMessage(e.getMessage()); // Item has expired message
+            response.setStatusCode(HttpStatus.GONE.value()); // 410 Gone status
+            return new ResponseEntity<>(response, HttpStatus.GONE);
         }
     }
 
+        @GetMapping("/expiring-soon")
+        public ResponseEntity<ApiResponse<List<FoodStock>>> foodStockExpiringSoon(
+                @RequestParam(value = "date") String date) {
+
+            ApiResponse<List<FoodStock>> response = new ApiResponse<>();
+
+            // Parse the provided date
+            LocalDateTime now;
+            try {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                now = LocalDateTime.parse(date, formatter);  // Convert the date string to LocalDateTime
+            } catch (Exception e) {
+                // Return a bad request if the date format is invalid
+                response.setStatusCode(HttpStatus.FORBIDDEN.value());
+                response.setMessage("Invalid date format. Use 'yyyy-MM-dd HH:mm:ss'.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Set the date range to check for items expiring in the next 3 days
+            LocalDateTime threeDaysLater = now.plusDays(3);
+
+            // Fetch items expiring soon from the given date range
+            List<FoodStock> expiringItems = foodStockService.getItemsExpiringInRange(now, threeDaysLater);
+
+            if (expiringItems.isEmpty()) {
+                response.setStatusCode(HttpStatus.NOT_FOUND.value());
+                response.setMessage("No items expiring soon from the given date.");
+                response.setEntity(expiringItems);
+                return ResponseEntity.ok(response);
+            } else {
+                response.setStatusCode(HttpStatus.FOUND.value());
+                response.setMessage("Items expiring soon retrieved successfully.");
+                response.setEntity(expiringItems);
+                return ResponseEntity.ok(response);
+            }
+        }
+
 
     // Get all ingredients
-    @GetMapping
+    @GetMapping ("/allStock")
     public ResponseEntity<ApiResponse<List<FoodStock>>> getAllIngredients() {
         ApiResponse<List<FoodStock>> response = new ApiResponse<>();
         List<FoodStock> ingredients = foodStockService.getAllIngredients();

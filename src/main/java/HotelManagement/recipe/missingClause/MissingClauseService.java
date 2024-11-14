@@ -1,11 +1,18 @@
 package HotelManagement.recipe.missingClause;
 
+import HotelManagement.exemption.ResourceNotFoundException;
+import HotelManagement.foodStock.FoodStock;
+import HotelManagement.foodStock.FoodStockRepo;
 import HotelManagement.recipe.todayRecipe.OrderedRecipe;
 import HotelManagement.recipe.todayRecipe.OrderedRecipeRepo;
+import HotelManagement.spices.SpicesAndSeasonings;
+import HotelManagement.spices.SpicesAndSeasoningsRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class MissingClauseService {
@@ -14,20 +21,39 @@ public class MissingClauseService {
 
     @Autowired
     OrderedRecipeRepo orderedRecipeRepo;
-    public MissingClauseRecipe createMissingClause(MissingClauseDto missingClauseDto){
+    @Autowired
+    FoodStockRepo foodStockRepo;
+    @Autowired
+    SpicesAndSeasoningsRepo spicesRepo;
+
+    public MissingClauseRecipe createMissingClause(MissingClauseDto missingClauseDto) {
         MissingClauseRecipe missingClauseRecipe = new MissingClauseRecipe();
         missingClauseRecipe.setMissingClauseName(missingClauseDto.getMissingClauseName());
-        missingClauseRecipe.setFoodStockSet(missingClauseDto.getFoodStockSet());
-        missingClauseRecipe.setSpicesSet(missingClauseDto.getSpicesSet());
-        Optional<OrderedRecipe> optionalOrderedRecipe= orderedRecipeRepo.findById(missingClauseDto.getOrderedRecipe());
-        if(optionalOrderedRecipe.isPresent()){
-            OrderedRecipe orderedRecipe = optionalOrderedRecipe.get();
-            missingClauseRecipe.setOrderedRecipe(orderedRecipe.getId());
+
+        // Retrieve and set FoodStock entities based on IDs
+        Set<FoodStock> foodStockSet = new HashSet<>();
+        for (Long foodStockId : missingClauseDto.getFoodStockSet()) {
+            FoodStock foodStock = foodStockRepo.findById(foodStockId)
+                    .orElseThrow(() -> new ResourceNotFoundException("FoodStock with ID " + foodStockId + " not found"));
+            foodStockSet.add(foodStock);
+        }
+        missingClauseRecipe.setFoodStockSet(foodStockSet);
+
+        // Retrieve and set SpicesAndSeasonings entities based on IDs
+        Set<SpicesAndSeasonings> spicesSet = new HashSet<>();
+        for (Long spiceId : missingClauseDto.getSpicesSet()) {
+            SpicesAndSeasonings spice = spicesRepo.findById(spiceId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Spice with ID " + spiceId + " not found"));
+            spicesSet.add(spice);
         }
 
+        missingClauseRecipe.setSpicesSet(spicesSet);
+
+        // Check if OrderedRecipe exists
+        OrderedRecipe orderedRecipe = orderedRecipeRepo.findById(missingClauseDto.getOrderedRecipe())
+                .orElseThrow(() -> new ResourceNotFoundException("OrderedRecipe with ID " + missingClauseDto.getOrderedRecipe() + " not found"));
+        missingClauseRecipe.getRecipes().add(orderedRecipe);
+
         return missingClauseRepo.save(missingClauseRecipe);
-
-
     }
-
 }
