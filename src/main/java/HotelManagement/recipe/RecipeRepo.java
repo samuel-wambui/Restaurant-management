@@ -56,6 +56,10 @@ public interface RecipeRepo extends JpaRepository<Recipe, Long > {
 
 
     Optional<Recipe> findByIdAndDeletedFlag(Long id, String deletedFlag);
+    Optional<Recipe> findByRecipeNumberAndDeletedFlag(String recipeNumber, String deletedFlag);
+    @Query(value = "SELECT MAX(CAST(SUBSTRING(stock_number, 4) AS UNSIGNED)) " +
+            "FROM recipe", nativeQuery = true)
+    Integer findLastServiceNumber();
 }
 
 

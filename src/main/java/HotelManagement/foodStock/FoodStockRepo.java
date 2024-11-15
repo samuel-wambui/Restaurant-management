@@ -22,4 +22,5 @@ public interface FoodStockRepo extends JpaRepository<FoodStock,Long> {
 
     Optional<FoodStock> findByStockNumberAndDeletedFlagAndDepletedFlag(String stockNumber, String deletedFlag, String depletedFlag);
 
+    Optional<FoodStock> findByStockNumber(String stockNumber);
 }

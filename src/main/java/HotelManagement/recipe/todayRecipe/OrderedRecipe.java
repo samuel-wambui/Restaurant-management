@@ -46,4 +46,5 @@ public class OrderedRecipe {
     @ManyToMany(mappedBy = "orderedRecipes")
     @JsonIgnore
     private Set<Menu> menuSet = new HashSet<>();
+
 }

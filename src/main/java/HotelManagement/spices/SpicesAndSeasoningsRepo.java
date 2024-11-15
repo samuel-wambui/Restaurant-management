@@ -9,4 +9,6 @@ import java.util.Optional;
 public interface SpicesAndSeasoningsRepo extends JpaRepository<SpicesAndSeasonings,Long> {
     List<SpicesAndSeasonings> findAllByDeletedFlag(String deletedFlag);
     Optional<SpicesAndSeasonings> findByIdAndDeletedFlag (Long id, String deletedFlag);
+
+    Optional<SpicesAndSeasonings> findBySpiceNumber(String spiceNumber);
 }

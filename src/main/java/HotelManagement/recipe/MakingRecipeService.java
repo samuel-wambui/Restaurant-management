@@ -3,6 +3,8 @@ package HotelManagement.recipe;
 import HotelManagement.costing.CostingService;
 import HotelManagement.foodStock.FoodStock;
 import HotelManagement.foodStock.FoodStockRepo;
+import HotelManagement.recipe.todayRecipe.OrderedRecipe;
+import HotelManagement.recipe.todayRecipe.OrderedRecipeDto;
 import HotelManagement.spices.SpicesAndSeasonings;
 import HotelManagement.spices.SpicesAndSeasoningsRepo;
 import org.slf4j.Logger;
@@ -32,6 +34,7 @@ public class MakingRecipeService {
     public Recipe addRecipe(RecipeDto recipeDto) {
         Recipe recipe = new Recipe();
         recipe.setRecipeName(recipeDto.getRecipeName());
+        recipe.setRecipeNumber(generateRecipeNumber());
 
         // Initialize sets to hold ingredients and spices
         Set<FoodStock> foodStockSet = new HashSet<>();
@@ -70,6 +73,13 @@ public class MakingRecipeService {
         logger.info("Recipe saved with ID: {} and name: {}", savedRecipe.getId(), savedRecipe.getRecipeName());
         return savedRecipe;
     }
+
+    private String generateRecipeNumber() {
+            Integer lastNumber = recipeRepo.findLastServiceNumber();
+            int nextNumber = (lastNumber != null) ? lastNumber + 1 : 1;
+            String formattedNumber = String.format("%03d", nextNumber);
+            return "R" + formattedNumber;
+        }
 
 
 

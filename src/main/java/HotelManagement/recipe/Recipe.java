@@ -23,6 +23,7 @@ public class Recipe {
     private Long id;
 
     private String recipeName;
+    private String recipeNumber;
 
     @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinTable(

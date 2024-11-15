@@ -22,6 +22,8 @@ public class SpicesAndSeasonings {
 
     private String name;
 
+    private String spiceNumber;
+
     @ManyToMany(mappedBy = "spicesSet")
     @JsonIgnore // Prevent recursion with Recipe
     private Set<Recipe> recipes = new HashSet<>();
@@ -31,5 +33,6 @@ public class SpicesAndSeasonings {
     private Set<MissingClauseRecipe> missingClauseRecipes = new HashSet<>();
 
     private String deletedFlag = "N";
+
 
 }
