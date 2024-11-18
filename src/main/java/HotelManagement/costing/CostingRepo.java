@@ -17,5 +17,7 @@ public interface CostingRepo extends JpaRepository<Costing, Long> {
             @Param("costCategory") CostCategory costCategory);
 
     boolean existsByRecipeId(Long recipeId);
+
+    Optional<Costing> findByStockNumber(String foodStockNumber);
 }
 

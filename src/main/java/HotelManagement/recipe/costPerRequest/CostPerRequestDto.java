@@ -6,6 +6,6 @@ import lombok.Data;
 public class CostPerRequestDto {
     private String recipeNumber;
     private String foodStockNumber;
-    private String foodStockQuantity;
+    private Double foodStockQuantity;
     private String spiceNumber;
 }

@@ -17,14 +17,14 @@ public class Costing {
     private Long id;
 
     private String quantity;
-    private Double cost;
+    private Double unitPrice;
     private Double totalCost;
     private Double discount;
 
     @Enumerated(EnumType.STRING)
     private CostCategory costCategory;
     private Long commodityId;
-    private String foodSockNumber;
+    private String stockNumber;
 
     private String deletedFlag = "N";
 

@@ -115,11 +115,11 @@ public class CostingService {
 //    }
 public Costing saveFoodStockCost (CostingDto costingDto){
     Costing newCost = new Costing();
-    newCost.setCost(costingDto.getUnitCost());
+    newCost.setUnitPrice(costingDto.getUnitCost());
     Optional<FoodStock> optionalFoodStock = foodStockRepo.findByStockNumberAndDeletedFlagAndDepletedFlag(costingDto.getFoodSockNumber(),"N","N");
     if(optionalFoodStock.isPresent()){
         FoodStock foodStock = optionalFoodStock.get();
-        newCost.setFoodSockNumber(foodStock.getStockNumber());
+        newCost.setStockNumber(foodStock.getStockNumber());
     }
 
     newCost.setDate(costingDto.getDate());
@@ -144,7 +144,7 @@ return costingRepo.save(newCost);
         Costing existingCost = getCostById(id); // Reuse existing method
 
         existingCost.setQuantity(costingDto.getQuantity());
-        existingCost.setCost(costingDto.getUnitCost());
+        existingCost.setUnitPrice(costingDto.getUnitCost());
         existingCost.setCostCategory(costingDto.getCostCategory());
 
         try {

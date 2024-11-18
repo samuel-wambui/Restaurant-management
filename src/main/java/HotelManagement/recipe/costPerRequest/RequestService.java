@@ -1,5 +1,7 @@
 package HotelManagement.recipe.costPerRequest;
 
+import HotelManagement.costing.Costing;
+import HotelManagement.costing.CostingRepo;
 import HotelManagement.exemption.ResourceNotFoundException;
 import HotelManagement.foodStock.FoodStock;
 import HotelManagement.foodStock.FoodStockRepo;
@@ -7,7 +9,6 @@ import HotelManagement.recipe.Recipe;
 import HotelManagement.recipe.RecipeRepo;
 import HotelManagement.spices.SpicesAndSeasonings;
 import HotelManagement.spices.SpicesAndSeasoningsRepo;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +25,8 @@ public class RequestService {
     FoodStockRepo foodStockRepo;
     @Autowired
     SpicesAndSeasoningsRepo spiceRepo;
+    @Autowired
+    CostingRepo costingRepo;
 
     public CostPerRequest createRequestCost(CostPerRequestDto cost) {
         CostPerRequest costPerRequest = new CostPerRequest();
@@ -50,7 +53,7 @@ public class RequestService {
 
                         // Step 4: Set FoodStock details in costPerRequest
                         costPerRequest.setFoodStockNumber(foodStock.getStockNumber());
-                        //costPerRequest.setFoodStockPrice(foodStock.getPrice());
+                        costPerRequest.setFoodStockPrice(calculateFoodStockPrice(foodStock.getStockNumber(), cost.getFoodStockQuantity()));
                         costPerRequest.setFoodStockQuantity(cost.getFoodStockQuantity());
                     } else {
                         throw new ResourceNotFoundException("FoodStock not found in the FoodStock entity");
@@ -86,10 +89,22 @@ public class RequestService {
             return costPerRequestRepo.save(costPerRequest);
         }
 
+    private String calculateFoodStockPrice(String stockNumber, Double quantity) {
+        Optional<Costing> optionalCosting = costingRepo.findByStockNumber(stockNumber);
 
+        if (optionalCosting.isPresent()) {
+            Costing costing = optionalCosting.get();
 
+            if (costing.getUnitPrice() == null) {
+                throw new IllegalStateException("Unit price is not set for FoodStock: " + stockNumber);
+            }
 
-
+            Double totalPrice = costing.getUnitPrice() * quantity;
+            return String.format("%.2f", totalPrice); // Format the price to 2 decimal places
+        } else {
+            throw new ResourceNotFoundException("Costing not found for FoodStock: " + stockNumber);
+        }
+    }
 
 
 
