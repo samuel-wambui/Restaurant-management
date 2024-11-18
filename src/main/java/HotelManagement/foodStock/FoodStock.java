@@ -21,7 +21,7 @@ public class FoodStock {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
+    private String stockName;
     private String unit;
     @ManyToMany(mappedBy = "foodStockSet")
     @JsonIgnore // Prevent recursion with Recipe

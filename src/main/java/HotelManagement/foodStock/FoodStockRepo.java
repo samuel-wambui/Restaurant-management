@@ -23,4 +23,17 @@ public interface FoodStockRepo extends JpaRepository<FoodStock,Long> {
     Optional<FoodStock> findByStockNumberAndDeletedFlagAndDepletedFlag(String stockNumber, String deletedFlag, String depletedFlag);
 
     Optional<FoodStock> findByStockNumber(String stockNumber);
+
+    List<FoodStock> findByStockNameAndDepletedFlagAndDeletedFlag(String stockName, String depletedFlag, String deletedFlag);
+    @Query(value = "SELECT SUM(c.quantity) " +
+            "FROM costing c " +
+            "JOIN food_stock fs ON c.food_stock_id = fs.id " +
+            "WHERE fs.name = :name " +
+            "GROUP BY fs.name",
+            nativeQuery = true)
+    Double findTotalQuantityByName(@Param("name") String name);
+
+
+
+
 }

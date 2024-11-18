@@ -20,7 +20,8 @@ public class CostPerRequest {
     private String requestNumber;
     private String recipeNumber;
     private String foodStockNumber;
+    private String stockName;
     private Double foodStockQuantity;
     private String spiceNumber;
-    private String foodStockPrice;
+    private Double foodStockPrice;
 }

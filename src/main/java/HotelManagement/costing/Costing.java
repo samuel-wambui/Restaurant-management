@@ -16,7 +16,7 @@ public class Costing {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String quantity;
+    private Double quantity;
     private Double unitPrice;
     private Double totalCost;
     private Double discount;

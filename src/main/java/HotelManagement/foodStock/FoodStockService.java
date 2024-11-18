@@ -17,7 +17,7 @@ public class FoodStockService {
     // Create a new ingredient
     public FoodStock createIngredient(FoodStockDto foodStockDto) {
         FoodStock ingredient = new FoodStock();
-        ingredient.setName(foodStockDto.getName());
+        ingredient.setStockName(foodStockDto.getName());
         ingredient.setDepletedFlag("N");
         ingredient.setStockNumber(generateSockNumber());
         return foodStockRepo.save(ingredient);
@@ -54,7 +54,7 @@ public class FoodStockService {
     // Update an existing ingredient
     public FoodStock updateIngredient(Long id, FoodStock updatedIngredient) {
         return foodStockRepo.findById(id).map(ingredient -> {
-            ingredient.setName(updatedIngredient.getName());
+            ingredient.setStockName(updatedIngredient.getStockName());
             return foodStockRepo.save(ingredient);
         }).orElseThrow(() -> new IllegalArgumentException("Ingredient with ID " + id + " not found."));
     }

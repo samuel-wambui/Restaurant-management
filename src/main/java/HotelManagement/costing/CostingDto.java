@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CostingDto {
-    private String quantity;
+    private Double quantity;
     private Double unitCost;
     private Double totalCost;
     private Double discount;
