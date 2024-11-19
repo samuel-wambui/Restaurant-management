@@ -22,7 +22,8 @@ public class FoodStock {
     private Long id;
 
     private String stockName;
-    private String unit;
+    private String unitNumber;
+
     @ManyToMany(mappedBy = "foodStockSet")
     @JsonIgnore // Prevent recursion with Recipe
     private Set<Recipe> recipes = new HashSet<>();
@@ -30,7 +31,6 @@ public class FoodStock {
     @ManyToMany(mappedBy = "foodStockSet")
     @JsonIgnore // Prevent recursion with Recipe
     private Set<MissingClauseRecipe> missingClauseRecipes = new HashSet<>();
-
 
     private String deletedFlag = "N";
     private String depletedFlag= "N";

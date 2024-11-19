@@ -121,6 +121,11 @@ public Costing saveFoodStockCost (CostingDto costingDto){
         FoodStock foodStock = optionalFoodStock.get();
         newCost.setStockNumber(foodStock.getStockNumber());
     }
+    newCost.setQuantity(costingDto.getQuantity());
+    newCost.setTotalCost(costingDto.getTotalCost());
+    newCost.setDiscount(costingDto.getDiscount());
+    newCost.setCostCategory(CostCategory.INGREDIENT);
+
 
     newCost.setDate(costingDto.getDate());
 return costingRepo.save(newCost);

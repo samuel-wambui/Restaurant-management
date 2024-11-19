@@ -19,6 +19,9 @@ public class FoodStockService {
         FoodStock ingredient = new FoodStock();
         ingredient.setStockName(foodStockDto.getName());
         ingredient.setDepletedFlag("N");
+        ingredient.setPurchaseDate(foodStockDto.getPurchaseDate());
+        ingredient.setExpiryDate(foodStockDto.getExpiryDate());
+        ingredient.setUnitNumber(foodStockDto.getUnitNumber());
         ingredient.setStockNumber(generateSockNumber());
         return foodStockRepo.save(ingredient);
 
