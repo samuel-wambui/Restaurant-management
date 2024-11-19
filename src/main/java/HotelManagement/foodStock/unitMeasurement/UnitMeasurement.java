@@ -17,4 +17,10 @@ public class UnitMeasurement {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String unitName;
+    private int unit;
+    private String subUnitName;
+    private int subUnit;
+    private String unitMeasurementNumber;
+
+
 }
