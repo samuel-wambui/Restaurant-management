@@ -6,7 +6,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CostPerRequestRepo extends JpaRepository<CostPerRequest, Long> {
-    @Query(value = "SELECT MAX(CAST(SUBSTRING(stock_number, 4) AS UNSIGNED)) " +
+    @Query(value = "SELECT MAX(CAST(SUBSTRING(request_number, 4) AS UNSIGNED)) " +
             "FROM cost_per_request", nativeQuery = true)
     Integer findLastServiceNumber();
 }
