@@ -26,7 +26,7 @@ public class CostPerRequestController {
             return new ResponseEntity<>(response,HttpStatus.CREATED);
 
         }
-        catch (ResourceNotFoundException e){
+        catch (RuntimeException e){
             ApiResponse response = new ApiResponse<>();
             response.setMessage(e.getMessage());
             response.setStatusCode(HttpStatus.BAD_REQUEST.value());

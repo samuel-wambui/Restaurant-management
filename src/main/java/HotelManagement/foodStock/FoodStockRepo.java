@@ -25,13 +25,13 @@ public interface FoodStockRepo extends JpaRepository<FoodStock,Long> {
     Optional<FoodStock> findByStockNumber(String stockNumber);
 
     List<FoodStock> findByStockNameAndDepletedFlagAndDeletedFlag(String stockName, String depletedFlag, String deletedFlag);
-    @Query(value = "SELECT SUM(c.quantity) " +
-            "FROM costing c " +
-            "JOIN food_stock fs ON c.food_stock_id = fs.id " +
-            "WHERE fs.name = :name " +
-            "GROUP BY fs.name",
+    @Query(value = "SELECT SUM(c.quantity) AS total_quantity " +
+            "FROM food_stock f " +
+            "LEFT JOIN costing c ON c.stock_number = f.stock_number " +
+            "WHERE f.stock_name = :name",
             nativeQuery = true)
     Double findTotalQuantityByName(@Param("name") String name);
+
 
 
 
