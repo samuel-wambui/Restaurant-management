@@ -32,8 +32,16 @@ public interface FoodStockRepo extends JpaRepository<FoodStock,Long> {
             nativeQuery = true)
     Double findTotalQuantityByName(@Param("name") String name);
 
-
-
-
-
+    @Query(
+            value = "SELECT MIN(id) AS id, stock_name AS stockName " +
+                    "FROM food_stock " +
+                    "WHERE deleted_flag = 'N' " +
+                    "GROUP BY stock_name",
+            nativeQuery = true
+    )
+    List<UniqueStockNameProjection> findUniqueStockName();
 }
+
+
+
+

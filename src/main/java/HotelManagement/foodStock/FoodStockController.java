@@ -109,6 +109,21 @@ public class FoodStockController {
         response.setStatusCode(HttpStatus.OK.value());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+    @GetMapping("/getUniqueStockNames")
+public  ResponseEntity<ApiResponse<List<UniqueStockNameDto>>> getAllUniqueStockNames(){
+    ApiResponse<List<UniqueStockNameDto>> response = new ApiResponse<>();
+    List<UniqueStockNameDto> stockNames = foodStockService.getUniqueStockNamesWithIds();
+    if (stockNames.isEmpty()) {
+        response.setMessage("No ingredients found.");
+        response.setStatusCode(HttpStatus.NO_CONTENT.value());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    response.setMessage("Ingredients retrieved successfully.");
+    response.setEntity(stockNames);
+    response.setStatusCode(HttpStatus.OK.value());
+    return new ResponseEntity<>(response, HttpStatus.OK);
+}
 
 
 

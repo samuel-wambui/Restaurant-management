@@ -47,7 +47,13 @@ public class FoodStockService {
         return ingredient;
     }
 
+    public List<UniqueStockNameDto> getUniqueStockNamesWithIds() {
+        // Fetch unique stock names and IDs using projection
+        List<UniqueStockNameProjection> projections = foodStockRepo.findUniqueStockName();
 
+        // Convert the projections to DTOs
+        return UniqueStockNameDto.fromProjections(projections);
+    }
 
     // Get all ingredients
     public List<FoodStock> getAllIngredients() {

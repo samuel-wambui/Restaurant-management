@@ -2,10 +2,12 @@ package HotelManagement.recipe.costPerRequest;
 
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class CostPerRequestDto {
     private String recipeNumber;
-    private String stockName;
-    private Double foodStockQuantity;
+    private List<FoodStockRequestDto> foodStocks;
     private String spiceNumber;
 }
+

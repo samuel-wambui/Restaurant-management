@@ -33,103 +33,120 @@ public class RequestService {
     @Autowired
     CostingRepo costingRepo;
 @Transactional
-    public CostPerRequest createRequestCost(CostPerRequestDto cost) {
+public CostPerRequest createRequestCost(CostPerRequestDto cost) {
+    System.out.println("Starting createRequestCost for Recipe Number: " + cost.getRecipeNumber());
+
+    // Step 1: Initialize CostPerRequest and assign a unique request number
     CostPerRequest costPerRequest = new CostPerRequest();
     costPerRequest.setRequestNumber(generateRequestNumber());
+    System.out.println("Generated Request Number: " + costPerRequest.getRequestNumber());
 
-    // Step 1: Validate and fetch Recipe
+    // Step 2: Validate and fetch the Recipe
+    System.out.println("Fetching Recipe for Recipe Number: " + cost.getRecipeNumber());
     Recipe recipe = recipeRepo.findByRecipeNumberAndDeletedFlag(cost.getRecipeNumber(), "N")
-            .orElseThrow(() -> new ResourceNotFoundException("Recipe not found for number: " + cost.getRecipeNumber()));
+            .orElseThrow(() -> {
+                System.out.println("Recipe not found for Recipe Number: " + cost.getRecipeNumber());
+                return new ResourceNotFoundException("Recipe not found for number: " + cost.getRecipeNumber());
+            });
     costPerRequest.setRecipeNumber(recipe.getRecipeNumber());
+    System.out.println("Recipe fetched successfully: " + recipe);
 
-    // Step 2: Validate FoodStock in Recipe
-    Set<String> foodStockNames = recipe.getFoodStockSet().stream()
-            .map(FoodStock::getStockName) // Convert each FoodStock object to its stockName
-            .collect(Collectors.toSet()); // Collect names into a Set for easy lookup
-    System.out.println("these are the food stock names in the recipe: " + foodStockNames);
+    // Step 3: Initialize total cost and iterate through FoodStock requests
+    double totalFoodStockPrice = 0.0;
 
-// Step 2: Check if the requested stock name exists in the Recipe's FoodStock names
-    if (!foodStockNames.contains(cost.getStockName())) {
-        throw new ResourceNotFoundException("FoodStock with name '" + cost.getStockName() +
-                "' not found in the Recipe's FoodStock set");
-    }
+    for (FoodStockRequestDto foodStockDto : cost.getFoodStocks()) {
+        System.out.println("Processing FoodStock with ID: " + foodStockDto.getId() + ", Requested Quantity: " + foodStockDto.getFoodStockQuantity());
 
-// Step 3: Retrieve the specific FoodStock object (optional, if needed later)
-    FoodStock foodStockInRecipe = recipe.getFoodStockSet().stream()
-            .filter(stock -> stock.getStockName().equals(cost.getStockName()))
-            .findFirst()
-            .orElseThrow(() -> new ResourceNotFoundException("FoodStock not found in the Recipe's FoodStock set"));
-    // Step 3: Verify FoodStock in Repository
-    List<FoodStock> foodStockList = foodStockRepo.findByStockNameAndDepletedFlagAndDeletedFlag(
-            cost.getStockName(), "N", "N");
-    if (foodStockList.isEmpty()) {
-        throw new ResourceNotFoundException("FoodStock " + cost.getStockName() + " not found in the FoodStock entity");
-    }
+        Long id = foodStockDto.getId();
+        double requestedQuantity = foodStockDto.getFoodStockQuantity();
 
-    Double totalQuantity = foodStockRepo.findTotalQuantityByName(cost.getStockName());
-    if (totalQuantity < cost.getFoodStockQuantity()) {
-        throw new RuntimeException("Requested quantity exceeds available quantity. Available quantity: " + totalQuantity);
-    }
+        Optional<FoodStock> optionalFoodStock = foodStockRepo.findByIdAndDeletedFlagAndExpired(id, "N", false);
+        if (!optionalFoodStock.isPresent()) {
+            System.out.println("FoodStock not found or invalid for ID: " + id);
+            throw new ResourceNotFoundException("FoodStock with ID " + id + " not found or invalid.");
+        }
 
-    FoodStock nearestToExpire = foodStockList.stream()
-            .min(Comparator.comparing(FoodStock::getExpiryDate))
-            .orElseThrow(() -> new RuntimeException("Unable to determine nearest expiry for FoodStock"));
-    System.out.println("nearestToExpire: " + nearestToExpire.getStockNumber());
+        FoodStock foodStock = optionalFoodStock.get();
+        String stockName = foodStock.getStockName();
 
-    Costing stockQuantity = costingRepo.findByStockNumber(nearestToExpire.getStockNumber())
-            .orElseThrow(() -> new ResourceNotFoundException("Costing information not found for stock number: " + nearestToExpire.getStockNumber()));
+        // Fetch all valid stocks with the same name
+        List<FoodStock> foodStockList = foodStockRepo.findByStockNameAndDepletedFlagAndDeletedFlag(stockName, "N", "N");
+        if (foodStockList.isEmpty()) {
+            System.out.println("No valid FoodStocks found for name: " + stockName);
+            throw new ResourceNotFoundException("No valid FoodStocks found for " + stockName);
+        }
 
-// If the first stock can fulfill the requested quantity
-    if (stockQuantity.getQuantity() >= cost.getFoodStockQuantity()) {
-        // If the first stock can fulfill the requested quantity
-        updateFoodStockAndCosting(nearestToExpire, stockQuantity, cost.getFoodStockQuantity());
+        System.out.println("Valid FoodStock List: " + foodStockList);
 
-        costPerRequest.setFoodStockPrice(calculateFoodStockPrice(cost.getStockName(), cost.getFoodStockQuantity()));
-        costPerRequest.setFoodStockNumber(nearestToExpire.getStockName());
-        costPerRequest.setFoodStockQuantity(cost.getFoodStockQuantity());
-        return costPerRequestRepo.save(costPerRequest);
+        double totalAvailableQuantity = foodStockRepo.findTotalQuantityByName(stockName);
+        if (totalAvailableQuantity < requestedQuantity) {
+            System.out.println("Requested quantity exceeds available quantity for " + stockName);
+            throw new RuntimeException("Requested quantity exceeds available quantity for " + stockName
+                    + ". Available quantity: " + totalAvailableQuantity);
+        }
 
-    } else {
-        // If the first stock can't fulfill the requested quantity
-        Double remainingQuantity = cost.getFoodStockQuantity() - stockQuantity.getQuantity();
-        Double totalPrice = 0.0;
+        // Sort FoodStocks by expiry date and calculate cost
+        double remainingQuantity = requestedQuantity;
+        double foodStockPrice = 0.0;
 
-        // Deduct the available quantity from the first stock and calculate its price
-        totalPrice += calculateFoodStockPrice(nearestToExpire.getStockNumber(), stockQuantity.getQuantity());
-        updateFoodStockAndCosting(nearestToExpire, stockQuantity, stockQuantity.getQuantity());
-
-        // Sort the remaining stocks by expiry date
         foodStockList.sort(Comparator.comparing(FoodStock::getExpiryDate));
+        System.out.println("Sorted FoodStock List by Expiry Date: " + foodStockList);
 
-        // Loop through remaining stocks
-        for (int i = 1; i < foodStockList.size(); i++) {
-            FoodStock nextFoodStock = foodStockList.get(i);
-            Costing nextStockQuantity = costingRepo.findByStockNumber(nextFoodStock.getStockNumber())
-                    .orElseThrow(() -> new ResourceNotFoundException("Costing information not found for stock number: " + nextFoodStock.getStockNumber()));
+        for (FoodStock stock : foodStockList) {
+            System.out.println("Processing Stock: " + stock.getStockNumber() + " " + stock.getStockName());
 
-            if (remainingQuantity <= nextStockQuantity.getQuantity()) {
+            // Fetch costing details for the current stock
+            Costing stockCosting = costingRepo.findByStockNumber(stock.getStockNumber())
+                    .orElseThrow(() -> {
+                        System.out.println("Costing not found for stock number: " + stock.getStockNumber());
+                        return new ResourceNotFoundException("Costing not found for stock number: " + stock.getStockNumber());
+                    });
+
+            System.out.println("Fetched Costing: " + stockCosting);
+
+            if (remainingQuantity <= stockCosting.getQuantity()) {
                 // This stock can fulfill the remaining quantity
-                totalPrice += calculateFoodStockPrice(nextFoodStock.getStockNumber(), remainingQuantity);
-                System.out.println("totalPrice second for foodstock: " +totalPrice);
-                updateFoodStockAndCosting(nextFoodStock, nextStockQuantity, remainingQuantity);
-                remainingQuantity = 0.0; // Remaining quantity is fully satisfied
+                double currentStockCost = calculateFoodStockPrice(stock.getStockNumber(), remainingQuantity);
+                foodStockPrice += currentStockCost;
+
+                System.out.println("Processed FoodStock: " + stock.getStockName() + ", Used Quantity: " + remainingQuantity + ", Cost: " + currentStockCost);
+                updateFoodStockAndCosting(stock, stockCosting, remainingQuantity);
+                remainingQuantity = 0.0;
+
+                // Terminate the loop for this food stock as the requested amount is fulfilled
                 break;
             } else {
                 // Use all of this stock's quantity
-                totalPrice += calculateFoodStockPrice(nextFoodStock.getStockNumber(), nextStockQuantity.getQuantity());
-                System.out.println("totalPrice for foodstock: " +totalPrice);
-                remainingQuantity -= nextStockQuantity.getQuantity();
-                updateFoodStockAndCosting(nextFoodStock, nextStockQuantity, nextStockQuantity.getQuantity());
+                double currentStockCost = calculateFoodStockPrice(stock.getStockNumber(), stockCosting.getQuantity());
+                foodStockPrice += currentStockCost;
+
+                System.out.println("Processed FoodStock: " + stock.getStockName() + ", Used Quantity: " + stockCosting.getQuantity() + ", Cost: " + currentStockCost);
+                remainingQuantity -= stockCosting.getQuantity();
+                updateFoodStockAndCosting(stock, stockCosting, stockCosting.getQuantity());
             }
         }
 
-
-        // Set the final total price and other details
-        costPerRequest.setFoodStockPrice(totalPrice);
-        costPerRequest.setStockName(nearestToExpire.getStockName() );
-        costPerRequest.setFoodStockQuantity(cost.getFoodStockQuantity());
-        costPerRequestRepo.save(costPerRequest);
+        System.out.println("Total cost for FoodStock '" + stockName + "': " + foodStockPrice);
+        totalFoodStockPrice += foodStockPrice;
     }
+
+    // Step 4: Set final details in CostPerRequest
+    costPerRequest.setFoodStockPrice(totalFoodStockPrice);
+    costPerRequest.setFoodStockQuantity(cost.getFoodStocks().stream().mapToDouble(FoodStockRequestDto::getFoodStockQuantity).sum());
+
+    System.out.println("Final total cost for all FoodStocks in Recipe: " + totalFoodStockPrice);
+
+    // Save and return the CostPerRequest object
+    costPerRequestRepo.save(costPerRequest);
+    System.out.println("CostPerRequest saved successfully: " + costPerRequest);
+
+
+
+    //
+
+
+
+
 
     // Step 5: Validate and fetch Spice in Recipe
     // Step 5: Validate and fetch Spice in Recipe
