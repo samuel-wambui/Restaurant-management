@@ -125,6 +125,22 @@ public  ResponseEntity<ApiResponse<List<UniqueStockNameDto>>> getAllUniqueStockN
     return new ResponseEntity<>(response, HttpStatus.OK);
 }
 
+    @GetMapping("/getFoodStockDetails")
+    public  ResponseEntity<ApiResponse<List<FoodStockDetailsDTO>>> getFoodStockDetails(){
+        ApiResponse<List<FoodStockDetailsDTO>> response = new ApiResponse<>();
+        List<FoodStockDetailsDTO> stockDetails = foodStockService.getFoodStockDetails();
+        if (stockDetails.isEmpty()) {
+            response.setMessage("No food in stock found found.");
+            response.setStatusCode(HttpStatus.NO_CONTENT.value());
+            return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+        }
+
+        response.setMessage("food in stock retrieved successfully.");
+        response.setEntity(stockDetails);
+        response.setStatusCode(HttpStatus.OK.value());
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 
 
     // Update an ingredient by ID

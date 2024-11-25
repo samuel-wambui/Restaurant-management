@@ -55,6 +55,14 @@ public class FoodStockService {
         return UniqueStockNameDto.fromProjections(projections);
     }
 
+    public List<FoodStockDetailsDTO> getFoodStockDetails() {
+        // Fetch unique stock names and IDs using projection
+        List<FoodStockProjection> projections = foodStockRepo.findFoodStockWithDetails();
+
+        // Convert the projections to DTOs
+        return FoodStockDetailsDTO.fromProjections(projections);
+    }
+
     // Get all ingredients
     public List<FoodStock> getAllIngredients() {
         return foodStockRepo.findAllByDeletedFlagAndExpiredOrderByExpiryDateAsc("N", false);

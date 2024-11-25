@@ -13,10 +13,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,144 +33,129 @@ public class RequestService {
 public CostPerRequest createRequestCost(CostPerRequestDto cost) {
     System.out.println("Starting createRequestCost for Recipe Number: " + cost.getRecipeNumber());
 
-    // Step 1: Initialize CostPerRequest and assign a unique request number
-    CostPerRequest costPerRequest = new CostPerRequest();
-    costPerRequest.setRequestNumber(generateRequestNumber());
-    System.out.println("Generated Request Number: " + costPerRequest.getRequestNumber());
+    // Step 1: Initialize CostPerRequest
+    CostPerRequest costPerRequest = initializeCostPerRequest();
 
     // Step 2: Validate and fetch the Recipe
-    System.out.println("Fetching Recipe for Recipe Number: " + cost.getRecipeNumber());
-    Recipe recipe = recipeRepo.findByRecipeNumberAndDeletedFlag(cost.getRecipeNumber(), "N")
-            .orElseThrow(() -> {
-                System.out.println("Recipe not found for Recipe Number: " + cost.getRecipeNumber());
-                return new ResourceNotFoundException("Recipe not found for number: " + cost.getRecipeNumber());
-            });
+    Recipe recipe = fetchRecipe(cost.getRecipeNumber());
     costPerRequest.setRecipeNumber(recipe.getRecipeNumber());
-    System.out.println("Recipe fetched successfully: " + recipe);
 
-    // Step 3: Initialize total cost and iterate through FoodStock requests
-    double totalFoodStockPrice = 0.0;
+    // Step 3: Process Food Stocks
+    processFoodStocks(cost, recipe, costPerRequest);
 
-    for (FoodStockRequestDto foodStockDto : cost.getFoodStocks()) {
-        System.out.println("Processing FoodStock with ID: " + foodStockDto.getId() + ", Requested Quantity: " + foodStockDto.getFoodStockQuantity());
+    // Step 4: Process Spices
+    processSpices(cost, recipe, costPerRequest);
 
+    // Save and return the completed CostPerRequest
+    return costPerRequestRepo.save(costPerRequest);
+}
+
+// Helper Methods
+
+    private CostPerRequest initializeCostPerRequest() {
+        CostPerRequest costPerRequest = new CostPerRequest();
+        costPerRequest.setRequestNumber(generateRequestNumber());
+        System.out.println("Generated Request Number: " + costPerRequest.getRequestNumber());
+        return costPerRequest;
+    }
+
+    private Recipe fetchRecipe(String recipeNumber) {
+        System.out.println("Fetching Recipe for Recipe Number: " + recipeNumber);
+        return recipeRepo.findByRecipeNumberAndDeletedFlag(recipeNumber, "N")
+                .orElseThrow(() -> {
+                    System.out.println("Recipe not found for Recipe Number: " + recipeNumber);
+                    return new ResourceNotFoundException("Recipe not found for number: " + recipeNumber);
+                });
+    }
+
+    private void processFoodStocks(CostPerRequestDto cost, Recipe recipe, CostPerRequest costPerRequest) {
+        double totalFoodStockPrice = 0.0;
+
+        // Get distinct stock names and numbers
+        Set<String> stockNames = getDistinctStockNames(recipe);
+        Set<String> foodStockNumbers = getDistinctFoodStockNumbers(recipe, stockNames);
+
+        System.out.println("Distinct stock names: " + stockNames);
+        System.out.println("Distinct food stock numbers: " + foodStockNumbers);
+
+        for (FoodStockRequestDto foodStockDto : cost.getFoodStocks()) {
+            double foodStockPrice = processSingleFoodStock(foodStockDto);
+            totalFoodStockPrice += foodStockPrice;
+        }
+
+        costPerRequest.setFoodStockPrice(totalFoodStockPrice);
+        costPerRequest.setFoodStockQuantity(cost.getFoodStocks().stream()
+                .mapToDouble(FoodStockRequestDto::getFoodStockQuantity).sum());
+        costPerRequest.setStockName(stockNames.toString());
+        costPerRequest.setFoodStockNumber(foodStockNumbers.toString());
+
+        System.out.println("Final total cost for all FoodStocks: " + totalFoodStockPrice);
+    }
+
+    private Set<String> getDistinctStockNames(Recipe recipe) {
+        return recipe.getFoodStockSet().stream()
+                .map(FoodStock::getStockName)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private Set<String> getDistinctFoodStockNumbers(Recipe recipe, Set<String> stockNames) {
+        return stockNames.stream()
+                .flatMap(stockName -> recipe.getFoodStockSet().stream()
+                        .filter(foodStock -> foodStock.getStockName().equals(stockName))
+                        .map(FoodStock::getStockNumber))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private double processSingleFoodStock(FoodStockRequestDto foodStockDto) {
         Long id = foodStockDto.getId();
         double requestedQuantity = foodStockDto.getFoodStockQuantity();
+        double totalCost = 0.0;
 
-        Optional<FoodStock> optionalFoodStock = foodStockRepo.findByIdAndDeletedFlagAndExpired(id, "N", false);
-        if (!optionalFoodStock.isPresent()) {
-            System.out.println("FoodStock not found or invalid for ID: " + id);
-            throw new ResourceNotFoundException("FoodStock with ID " + id + " not found or invalid.");
-        }
+        FoodStock foodStock = foodStockRepo.findByIdAndDeletedFlagAndExpired(id, "N", false)
+                .orElseThrow(() -> new ResourceNotFoundException("FoodStock with ID " + id + " not found or invalid."));
+        List<FoodStock> validStocks = foodStockRepo.findValidFoodStocks(foodStock.getStockName());
+        double totalAvailableQuantity = foodStockRepo.findTotalQuantityByName(foodStock.getStockName());
 
-        FoodStock foodStock = optionalFoodStock.get();
-        String stockName = foodStock.getStockName();
-
-        // Fetch all valid stocks with the same name
-        List<FoodStock> foodStockList = foodStockRepo.findByStockNameAndDepletedFlagAndDeletedFlag(stockName, "N", "N");
-        if (foodStockList.isEmpty()) {
-            System.out.println("No valid FoodStocks found for name: " + stockName);
-            throw new ResourceNotFoundException("No valid FoodStocks found for " + stockName);
-        }
-
-        System.out.println("Valid FoodStock List: " + foodStockList);
-
-        double totalAvailableQuantity = foodStockRepo.findTotalQuantityByName(stockName);
         if (totalAvailableQuantity < requestedQuantity) {
-            System.out.println("Requested quantity exceeds available quantity for " + stockName);
-            throw new RuntimeException("Requested quantity exceeds available quantity for " + stockName
-                    + ". Available quantity: " + totalAvailableQuantity);
+            throw new RuntimeException("Requested quantity exceeds available quantity for " + foodStock.getStockName()+" is " + totalAvailableQuantity );
         }
 
-        // Sort FoodStocks by expiry date and calculate cost
         double remainingQuantity = requestedQuantity;
-        double foodStockPrice = 0.0;
+        for (FoodStock stock : validStocks) {
+            Costing costing = costingRepo.findByStockNumber(stock.getStockNumber())
+                    .orElseThrow(() -> new ResourceNotFoundException("Costing not found for stock number: " + stock.getStockNumber()));
 
-        foodStockList.sort(Comparator.comparing(FoodStock::getExpiryDate));
-        System.out.println("Sorted FoodStock List by Expiry Date: " + foodStockList);
-
-        for (FoodStock stock : foodStockList) {
-            System.out.println("Processing Stock: " + stock.getStockNumber() + " " + stock.getStockName());
-
-            // Fetch costing details for the current stock
-            Costing stockCosting = costingRepo.findByStockNumber(stock.getStockNumber())
-                    .orElseThrow(() -> {
-                        System.out.println("Costing not found for stock number: " + stock.getStockNumber());
-                        return new ResourceNotFoundException("Costing not found for stock number: " + stock.getStockNumber());
-                    });
-
-            System.out.println("Fetched Costing: " + stockCosting);
-
-            if (remainingQuantity <= stockCosting.getQuantity()) {
-                // This stock can fulfill the remaining quantity
-                double currentStockCost = calculateFoodStockPrice(stock.getStockNumber(), remainingQuantity);
-                foodStockPrice += currentStockCost;
-
-                System.out.println("Processed FoodStock: " + stock.getStockName() + ", Used Quantity: " + remainingQuantity + ", Cost: " + currentStockCost);
-                updateFoodStockAndCosting(stock, stockCosting, remainingQuantity);
-                remainingQuantity = 0.0;
-
-                // Terminate the loop for this food stock as the requested amount is fulfilled
+            if (remainingQuantity <= costing.getQuantity()) {
+                totalCost += calculateFoodStockPrice(stock.getStockNumber(), remainingQuantity);
+                updateFoodStockAndCosting(stock, costing, remainingQuantity);
                 break;
             } else {
-                // Use all of this stock's quantity
-                double currentStockCost = calculateFoodStockPrice(stock.getStockNumber(), stockCosting.getQuantity());
-                foodStockPrice += currentStockCost;
-
-                System.out.println("Processed FoodStock: " + stock.getStockName() + ", Used Quantity: " + stockCosting.getQuantity() + ", Cost: " + currentStockCost);
-                remainingQuantity -= stockCosting.getQuantity();
-                updateFoodStockAndCosting(stock, stockCosting, stockCosting.getQuantity());
+                totalCost += calculateFoodStockPrice(stock.getStockNumber(), costing.getQuantity());
+                remainingQuantity -= costing.getQuantity();
+                updateFoodStockAndCosting(stock, costing, costing.getQuantity());
             }
         }
 
-        System.out.println("Total cost for FoodStock '" + stockName + "': " + foodStockPrice);
-        totalFoodStockPrice += foodStockPrice;
+        return totalCost;
     }
 
-    // Step 4: Set final details in CostPerRequest
-    costPerRequest.setFoodStockPrice(totalFoodStockPrice);
-    costPerRequest.setFoodStockQuantity(cost.getFoodStocks().stream().mapToDouble(FoodStockRequestDto::getFoodStockQuantity).sum());
-
-    System.out.println("Final total cost for all FoodStocks in Recipe: " + totalFoodStockPrice);
-
-    // Save and return the CostPerRequest object
-    costPerRequestRepo.save(costPerRequest);
-    System.out.println("CostPerRequest saved successfully: " + costPerRequest);
-
-
-
-    //
-
-
-
-
-
-    // Step 5: Validate and fetch Spice in Recipe
-    // Step 5: Validate and fetch Spice in Recipe
-    Optional<SpicesAndSeasonings> optionalSpiceInRecipe = recipe.getSpicesSet().stream()
-            .filter(spice -> spice.getSpiceNumber().equals(cost.getSpiceNumber()))
-            .findFirst();
-
-    if (optionalSpiceInRecipe.isPresent()) {
-        SpicesAndSeasonings spiceInRecipe = optionalSpiceInRecipe.get();
-
-        // Step 6: Verify Spice in Repository
-        Optional<SpicesAndSeasonings> optionalSpice = spiceRepo.findBySpiceNumber(cost.getSpiceNumber());
-        if (optionalSpice.isPresent()) {
-            SpicesAndSeasonings spice = optionalSpice.get();
-            costPerRequest.setSpiceNumber(spice.getSpiceNumber());
-        } else {
-            System.out.println("Spice not found in the SpicesAndSeasonings entity for number: " + cost.getSpiceNumber());
-            costPerRequest.setSpiceNumber(null); // Or set a default value if needed
-        }
-    } else {
-        System.out.println("Spice not found in the Recipe's Spices set for number: " + cost.getSpiceNumber());
-        costPerRequest.setSpiceNumber(null); // Or set a default value if needed
+    private void processSpices(CostPerRequestDto cost, Recipe recipe, CostPerRequest costPerRequest) {
+        recipe.getSpicesSet().stream()
+                .filter(spice -> spice.getSpiceNumber().equals(cost.getSpiceNumber()))
+                .findFirst()
+                .ifPresentOrElse(spiceInRecipe -> {
+                    spiceRepo.findBySpiceNumber(cost.getSpiceNumber())
+                            .ifPresentOrElse(spice -> costPerRequest.setSpiceNumber(spice.getSpiceNumber()),
+                                    () -> {
+                                        System.out.println("Spice not found for number: " + cost.getSpiceNumber());
+                                        costPerRequest.setSpiceNumber(null);
+                                    });
+                }, () -> {
+                    System.out.println("Spice not found in Recipe for number: " + cost.getSpiceNumber());
+                    costPerRequest.setSpiceNumber(null);
+                });
     }
 
-// Save the completed request
-    return costPerRequestRepo.save(costPerRequest);
-}
 
     // Helper method to handle FoodStock updates
     private void updateFoodStockAndCosting(FoodStock foodStock, Costing stockQuantity, Double usedQuantity) {

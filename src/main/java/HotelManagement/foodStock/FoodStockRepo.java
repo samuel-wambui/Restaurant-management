@@ -40,6 +40,42 @@ public interface FoodStockRepo extends JpaRepository<FoodStock,Long> {
             nativeQuery = true
     )
     List<UniqueStockNameProjection> findUniqueStockName();
+
+
+    @Query(value = "SELECT * " +
+            "FROM food_stock " +
+            "WHERE stock_name = :stockName AND depleted_flag = 'N' AND deleted_flag = 'N' " +
+            "ORDER BY expiry_date ASC, id ASC",
+            nativeQuery = true)
+    List<FoodStock> findValidFoodStocks(@Param("stockName") String stockName);
+
+    @Query(value = """
+        SELECT 
+            f.id AS id,
+            f.stock_name AS stockName,
+            f.stock_number AS stockNumber,
+            f.unit_number AS unitNumber,
+            COALESCE(c.quantity * u.unit, 0) AS quantityInUnits,
+            u.unit_name AS unitName,
+            COALESCE(c.quantity * u.sub_unit, 0) AS quantityInSubUnits,
+            u.sub_unit_name AS subUnitName,
+            c.unit_price AS unitPrice,
+            c.total_cost AS totalCost,
+            c.discount AS discount,
+            f.expiry_date AS expiryDate
+        FROM 
+            food_stock f
+        LEFT JOIN 
+            costing c ON c.stock_number = f.stock_number
+        LEFT JOIN 
+            unit_measurement u ON f.unit_number = u.unit_measurement_number
+        WHERE 
+            f.depleted_flag = "N"
+        ORDER BY 
+            f.expiry_date ASC
+        """, nativeQuery = true)
+    List<FoodStockProjection> findFoodStockWithDetails();
+
 }
 
 
