@@ -5,6 +5,8 @@ import HotelManagement.costing.CostingRepo;
 import HotelManagement.exemption.ResourceNotFoundException;
 import HotelManagement.foodStock.FoodStock;
 import HotelManagement.foodStock.FoodStockRepo;
+import HotelManagement.foodStock.unitMeasurement.UnitMeasurement;
+import HotelManagement.foodStock.unitMeasurement.UnitMeasurementRepo;
 import HotelManagement.recipe.Recipe;
 import HotelManagement.recipe.RecipeRepo;
 import HotelManagement.spices.SpicesAndSeasonings;
@@ -13,6 +15,8 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -29,6 +33,8 @@ public class RequestService {
     SpicesAndSeasoningsRepo spiceRepo;
     @Autowired
     CostingRepo costingRepo;
+    @Autowired
+    UnitMeasurementRepo unitMeasurementRepo;
 @Transactional
 public CostPerRequest createRequestCost(CostPerRequestDto cost) {
     System.out.println("Starting createRequestCost for Recipe Number: " + cost.getRecipeNumber());
@@ -40,10 +46,10 @@ public CostPerRequest createRequestCost(CostPerRequestDto cost) {
     Recipe recipe = fetchRecipe(cost.getRecipeNumber());
     costPerRequest.setRecipeNumber(recipe.getRecipeNumber());
 
-    // Step 3: Process Food Stocks
+    // Step 3: Process Food Stocks and calculate their total cost
     processFoodStocks(cost, recipe, costPerRequest);
 
-    // Step 4: Process Spices
+    // Step 4: Process Spices and assign to CostPerRequest
     processSpices(cost, recipe, costPerRequest);
 
     // Save and return the completed CostPerRequest
@@ -69,74 +75,128 @@ public CostPerRequest createRequestCost(CostPerRequestDto cost) {
     }
 
     private void processFoodStocks(CostPerRequestDto cost, Recipe recipe, CostPerRequest costPerRequest) {
-        double totalFoodStockPrice = 0.0;
-
-        // Get distinct stock names and numbers
-        Set<String> stockNames = getDistinctStockNames(recipe);
-        Set<String> foodStockNumbers = getDistinctFoodStockNumbers(recipe, stockNames);
-
-        System.out.println("Distinct stock names: " + stockNames);
-        System.out.println("Distinct food stock numbers: " + foodStockNumbers);
+        BigDecimal totalFoodStockPrice = BigDecimal.ZERO;
+        Map<Long, BigDecimal> convertedQuantitiesMap = new HashMap<>();
+        LinkedHashMap<String, BigDecimal> stockNameToQuantityMap = initializeStockNameToQuantityMap(recipe);
 
         for (FoodStockRequestDto foodStockDto : cost.getFoodStocks()) {
-            double foodStockPrice = processSingleFoodStock(foodStockDto);
-            totalFoodStockPrice += foodStockPrice;
+            BigDecimal convertedQuantity = generateQuantity(foodStockDto, recipe);
+            convertedQuantitiesMap.put(foodStockDto.getId(), convertedQuantity);
+
+            FoodStock foodStock = fetchFoodStock(foodStockDto.getId());
+            stockNameToQuantityMap.merge(foodStock.getStockName(), convertedQuantity, BigDecimal::add);
+
+            BigDecimal foodStockPrice = processSingleFoodStock(foodStockDto, recipe, convertedQuantity);
+            totalFoodStockPrice = totalFoodStockPrice.add(foodStockPrice);
         }
 
-        costPerRequest.setFoodStockPrice(totalFoodStockPrice);
-        costPerRequest.setFoodStockQuantity(cost.getFoodStocks().stream()
-                .mapToDouble(FoodStockRequestDto::getFoodStockQuantity).sum());
-        costPerRequest.setStockName(stockNames.toString());
-        costPerRequest.setFoodStockNumber(foodStockNumbers.toString());
+        costPerRequest.setFoodStockPrice(totalFoodStockPrice.doubleValue());
+        costPerRequest.setFoodStockQuantity(formatQuantitiesInOrder(stockNameToQuantityMap));
+        costPerRequest.setStockName(String.join(", ", stockNameToQuantityMap.keySet()));
 
-        System.out.println("Final total cost for all FoodStocks: " + totalFoodStockPrice);
+        System.out.println("Total FoodStock Price: " + totalFoodStockPrice);
+        System.out.println("Quantities in Recipe Order: " + stockNameToQuantityMap);
+    }
+    private String formatQuantitiesInOrder(Map<String, BigDecimal> stockNameToQuantityMap) {
+        return stockNameToQuantityMap.values().stream()
+                .map(BigDecimal::toPlainString) // Converts BigDecimal to plain string representation
+                .collect(Collectors.joining(", ")); // Joins the strings with a comma
     }
 
-    private Set<String> getDistinctStockNames(Recipe recipe) {
-        return recipe.getFoodStockSet().stream()
-                .map(FoodStock::getStockName)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+    private LinkedHashMap<String, BigDecimal> initializeStockNameToQuantityMap(Recipe recipe) {
+        LinkedHashMap<String, BigDecimal> map = new LinkedHashMap<>();
+        recipe.getFoodStockSet().forEach(stock -> map.put(stock.getStockName(), BigDecimal.ZERO));
+        return map;
     }
 
-    private Set<String> getDistinctFoodStockNumbers(Recipe recipe, Set<String> stockNames) {
-        return stockNames.stream()
-                .flatMap(stockName -> recipe.getFoodStockSet().stream()
-                        .filter(foodStock -> foodStock.getStockName().equals(stockName))
-                        .map(FoodStock::getStockNumber))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+    private FoodStock fetchFoodStock(Long id) {
+        return foodStockRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("FoodStock not found with ID: " + id));
     }
 
-    private double processSingleFoodStock(FoodStockRequestDto foodStockDto) {
+    private BigDecimal processSingleFoodStock(FoodStockRequestDto foodStockDto, Recipe recipe, BigDecimal requestedQuantity) {
         Long id = foodStockDto.getId();
-        double requestedQuantity = foodStockDto.getFoodStockQuantity();
-        double totalCost = 0.0;
+        BigDecimal totalCost = BigDecimal.ZERO;
 
         FoodStock foodStock = foodStockRepo.findByIdAndDeletedFlagAndExpired(id, "N", false)
                 .orElseThrow(() -> new ResourceNotFoundException("FoodStock with ID " + id + " not found or invalid."));
-        List<FoodStock> validStocks = foodStockRepo.findValidFoodStocks(foodStock.getStockName());
-        double totalAvailableQuantity = foodStockRepo.findTotalQuantityByName(foodStock.getStockName());
+        List<FoodStock> validStocks = fetchValidFoodStocks(foodStock.getStockName());
+        BigDecimal totalAvailableQuantity = fetchTotalAvailableQuantity(foodStock.getStockName());
 
-        if (totalAvailableQuantity < requestedQuantity) {
-            throw new RuntimeException("Requested quantity exceeds available quantity for " + foodStock.getStockName()+" is " + totalAvailableQuantity );
+        if (totalAvailableQuantity.compareTo(requestedQuantity) < 0) {
+            throw new RuntimeException("Requested quantity exceeds available quantity for " +
+                    foodStock.getStockName() + ". Available: " + totalAvailableQuantity);
         }
 
-        double remainingQuantity = requestedQuantity;
+        BigDecimal remainingQuantity = requestedQuantity;
         for (FoodStock stock : validStocks) {
-            Costing costing = costingRepo.findByStockNumber(stock.getStockNumber())
-                    .orElseThrow(() -> new ResourceNotFoundException("Costing not found for stock number: " + stock.getStockNumber()));
+            Costing costing = fetchCosting(stock.getStockNumber());
+            BigDecimal costingQuantity = BigDecimal.valueOf(costing.getQuantity());
 
-            if (remainingQuantity <= costing.getQuantity()) {
-                totalCost += calculateFoodStockPrice(stock.getStockNumber(), remainingQuantity);
+            if (remainingQuantity.compareTo(costingQuantity) <= 0) {
+                totalCost = totalCost.add(calculateFoodStockPrice(stock.getStockNumber(), remainingQuantity));
                 updateFoodStockAndCosting(stock, costing, remainingQuantity);
                 break;
             } else {
-                totalCost += calculateFoodStockPrice(stock.getStockNumber(), costing.getQuantity());
-                remainingQuantity -= costing.getQuantity();
-                updateFoodStockAndCosting(stock, costing, costing.getQuantity());
+                totalCost = totalCost.add(calculateFoodStockPrice(stock.getStockNumber(), costingQuantity));
+                remainingQuantity = remainingQuantity.subtract(costingQuantity);
+                updateFoodStockAndCosting(stock, costing, costingQuantity);
             }
         }
 
-        return totalCost;
+        return totalCost.setScale(2, RoundingMode.HALF_UP);
+    }
+    private List<FoodStock> fetchValidFoodStocks(String stockName) {
+        return foodStockRepo.findValidFoodStocks(stockName);  // Assuming `findValidFoodStocks` is defined in the repo
+    }
+    private BigDecimal fetchTotalAvailableQuantity(String stockName) {
+        // This assumes you have a method in your foodStockRepo to fetch the total quantity by stock name
+        return BigDecimal.valueOf(foodStockRepo.findTotalQuantityByName(stockName));
+    }
+
+
+    private BigDecimal calculateFoodStockPrice(String stockNumber, BigDecimal quantity) {
+        Costing costing = fetchCosting(stockNumber);
+        BigDecimal unitPrice = BigDecimal.valueOf(costing.getUnitPrice() == null ? 0.0 : costing.getUnitPrice());
+        return unitPrice.multiply(quantity).setScale(2, RoundingMode.HALF_UP);
+    }
+    private Costing fetchCosting(String stockNumber) {
+        return costingRepo.findByStockNumber(stockNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("Costing not found for stock number: " + stockNumber));
+    }
+
+    private void updateFoodStockAndCosting(FoodStock foodStock, Costing costing, BigDecimal usedQuantity) {
+        BigDecimal newStockQuantity = BigDecimal.valueOf(costing.getQuantity()).subtract(usedQuantity);
+        costing.setQuantity(newStockQuantity.doubleValue());
+
+        if (newStockQuantity.compareTo(BigDecimal.ZERO) == 0) {
+            foodStock.setDepletedFlag("Y");
+            foodStockRepo.save(foodStock);
+        }
+        costingRepo.save(costing);
+    }
+
+    private BigDecimal generateQuantity(FoodStockRequestDto requestDto, Recipe recipe) {
+        String unitNumber = recipe.getFoodStockSet().stream()
+                .map(FoodStock::getUnitNumber)
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Unit number not found in recipe."));
+
+        UnitMeasurement unitMeasurement = unitMeasurementRepo.findByUnitMeasurementNumber(unitNumber);
+        if (unitMeasurement == null) {
+            throw new ResourceNotFoundException("Unit measurement not found for unit number: " + unitNumber);
+        }
+
+        BigDecimal quantity = BigDecimal.valueOf(requestDto.getFoodStockQuantity());
+        if (requestDto.getMeasurementCategory() == MeasurementCategory.Sub_unit) {
+            BigDecimal subUnitValue = BigDecimal.valueOf(unitMeasurement.getSubUnit());
+            if (subUnitValue.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Invalid sub-unit value: " + unitMeasurement.getSubUnit());
+            }
+            quantity = quantity.divide(subUnitValue, 5, RoundingMode.HALF_UP);
+        }
+
+        return quantity;
     }
 
     private void processSpices(CostPerRequestDto cost, Recipe recipe, CostPerRequest costPerRequest) {
@@ -146,55 +206,9 @@ public CostPerRequest createRequestCost(CostPerRequestDto cost) {
                 .ifPresentOrElse(spiceInRecipe -> {
                     spiceRepo.findBySpiceNumber(cost.getSpiceNumber())
                             .ifPresentOrElse(spice -> costPerRequest.setSpiceNumber(spice.getSpiceNumber()),
-                                    () -> {
-                                        System.out.println("Spice not found for number: " + cost.getSpiceNumber());
-                                        costPerRequest.setSpiceNumber(null);
-                                    });
-                }, () -> {
-                    System.out.println("Spice not found in Recipe for number: " + cost.getSpiceNumber());
-                    costPerRequest.setSpiceNumber(null);
-                });
+                                    () -> costPerRequest.setSpiceNumber(null));
+                }, () -> costPerRequest.setSpiceNumber(null));
     }
-
-
-    // Helper method to handle FoodStock updates
-    private void updateFoodStockAndCosting(FoodStock foodStock, Costing stockQuantity, Double usedQuantity) {
-        Double newStockQuantity = stockQuantity.getQuantity() - usedQuantity;
-        stockQuantity.setQuantity(newStockQuantity);
-
-        if (newStockQuantity == 0) {
-            foodStock.setDepletedFlag("Y");
-            foodStockRepo.save(foodStock);
-        }
-        costingRepo.save(stockQuantity);
-    }
-
-    private Double calculateFoodStockPrice(String stockNumber, Double quantity) {
-        Optional<Costing> optionalCosting = costingRepo.findByStockNumber(stockNumber);
-        Double unitPrice;
-
-        if (optionalCosting.isPresent()) {
-            Costing costing = optionalCosting.get();
-
-            // Handle the case where unitPrice is null
-            if (costing.getUnitPrice() == null) {
-                System.out.println("Unit price is not set for FoodStock: " + stockNumber);
-                unitPrice = 0.0; // Set unit price to default 0.0
-            } else {
-                unitPrice = costing.getUnitPrice();
-            }
-        } else {
-            System.out.println("Costing not found for FoodStock: " + stockNumber);
-            unitPrice = 0.0; // Set default unit price if costing is not found
-        }
-
-        // Calculate the total price using the resolved unit price
-        Double totalPrice = unitPrice * quantity;
-
-        // Format the price to 2 decimal places
-        return Math.round(totalPrice * 100.0) / 100.0;
-    }
-
 
     private String generateRequestNumber() {
             Integer lastNumber = costPerRequestRepo.findLastServiceNumber();

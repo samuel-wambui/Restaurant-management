@@ -9,5 +9,6 @@ public class CostPerRequestDto {
     private String recipeNumber;
     private List<FoodStockRequestDto> foodStocks;
     private String spiceNumber;
+
 }
 

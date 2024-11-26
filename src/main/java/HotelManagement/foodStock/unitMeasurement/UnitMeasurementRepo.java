@@ -9,4 +9,6 @@ public interface UnitMeasurementRepo extends JpaRepository<UnitMeasurement, Long
     @Query(value = "SELECT MAX(CAST(SUBSTRING(unit_measurement_number, 4) AS UNSIGNED)) " +
             "FROM unit_measurement", nativeQuery = true)
     Integer findLastServiceNumber();
+
+    UnitMeasurement findByUnitMeasurementNumber(String unitNumber);
 }
