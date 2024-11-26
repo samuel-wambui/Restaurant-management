@@ -157,9 +157,27 @@ public CostPerRequest createRequestCost(CostPerRequestDto cost) {
 
     private BigDecimal calculateFoodStockPrice(String stockNumber, BigDecimal quantity) {
         Costing costing = fetchCosting(stockNumber);
-        BigDecimal unitPrice = BigDecimal.valueOf(costing.getUnitPrice() == null ? 0.0 : costing.getUnitPrice());
-        return unitPrice.multiply(quantity).setScale(2, RoundingMode.HALF_UP);
+
+        // Ensure unit price is not null and set scale for precision
+        BigDecimal unitPrice = BigDecimal.valueOf(costing.getUnitPrice() == null ? 0.0 : costing.getUnitPrice()).setScale(2, RoundingMode.HALF_UP);
+
+        // Ensure quantity is valid and set scale for precision
+        BigDecimal roundedQuantity = quantity.setScale(2, RoundingMode.HALF_UP);
+
+        // Log the values before calculating
+        System.out.println("Unit Price: " + unitPrice);
+        System.out.println("Quantity: " + roundedQuantity);
+
+        // Perform the multiplication and return the result
+        BigDecimal totalPrice = unitPrice.multiply(roundedQuantity);
+
+        // Log the calculated price
+        System.out.println("Total Price before rounding: " + totalPrice);
+
+        // Return the result rounded to two decimal places
+        return totalPrice.setScale(2, RoundingMode.HALF_UP);
     }
+
     private Costing fetchCosting(String stockNumber) {
         return costingRepo.findByStockNumber(stockNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Costing not found for stock number: " + stockNumber));
