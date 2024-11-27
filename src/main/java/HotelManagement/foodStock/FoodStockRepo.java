@@ -40,13 +40,13 @@ public interface FoodStockRepo extends JpaRepository<FoodStock,Long> {
             nativeQuery = true
     )
     List<UniqueStockNameProjection> findUniqueStockName();
-    @Query(
-            value = "SELECT stock_name AS stockName " +
-                    "FROM food_stock " +
-                    "WHERE id = :id",
-            nativeQuery = true
-    )
-    String findNameById(@Param("id") Long id);
+//    @Query(
+//            value = "SELECT stock_name AS stockName " +
+//                    "FROM food_stock " +
+//                    "WHERE id = :id",
+//            nativeQuery = true
+//    )
+//    String findNameById(@Param("id") Long id);
 
 
     @Query(value = "SELECT * " +

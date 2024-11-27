@@ -160,36 +160,38 @@ public CostPerRequest createRequestCost(CostPerRequestDto cost) {
 
         // Check if the FoodStock exists and is valid
         Optional<FoodStock> optionalFoodStock = foodStockRepo.findByIdAndDeletedFlagAndExpiredAndDepletedFlag(id, "N", false, "N");
-        if (!optionalFoodStock.isPresent()) {
-            String stockName = foodStockRepo.findNameById(id);
-            throw new ResourceNotFoundException( stockName + " not found, invalid, or depleted.");
+        {
+            if (!optionalFoodStock.isPresent()) {
+                FoodStock foodStock = optionalFoodStock.get();
+                String stockName = foodStock.getStockName();
+                throw new ResourceNotFoundException(stockName + " not found, invalid, or depleted.");
+            }
+
+            FoodStock foodStock = optionalFoodStock.get();
+
+            // Validate if the FoodStock is part of the Recipe's foodStocks list
+            if (!recipe.getFoodStockSet().contains(foodStock)) {
+                String stockName = foodStock.getStockName();
+                throw new IllegalArgumentException(stockName + " is not part of the recipe.");
+            }
+
+            // Check for missing FoodStock items
+            List<Long> recipeFoodStockIds = recipe.getFoodStockSet()
+                    .stream()
+                    .map(FoodStock::getId)
+                    .toList();
+
+            List<Long> missingFoodStockIds = recipeFoodStockIds.stream()
+                    .filter(recipeFoodStockId -> !recipeFoodStockIds.contains(recipeFoodStockId))
+                    .toList();
+
+            if (!missingFoodStockIds.isEmpty()) {
+                throw new IllegalArgumentException("The following FoodStock items are missing: " + missingFoodStockIds);
+            }
+
+            return foodStock;
         }
-
-        FoodStock foodStock = optionalFoodStock.get();
-
-        // Validate if the FoodStock is part of the Recipe's foodStocks list
-        if (!recipe.getFoodStockSet().contains(foodStock)) {
-            String stockName = foodStockRepo.findNameById(id);
-            throw new IllegalArgumentException( stockName + " is not part of the recipe.");
-        }
-
-        // Check for missing FoodStock items
-        List<Long> recipeFoodStockIds = recipe.getFoodStockSet()
-                .stream()
-                .map(FoodStock::getId)
-                .toList();
-
-        List<Long> missingFoodStockIds = recipeFoodStockIds.stream()
-                .filter(recipeFoodStockId -> !recipeFoodStockIds.contains(recipeFoodStockId))
-                .toList();
-
-        if (!missingFoodStockIds.isEmpty()) {
-            throw new IllegalArgumentException("The following FoodStock items are missing: " + missingFoodStockIds);
-        }
-
-        return foodStock;
     }
-
     private List<FoodStock> fetchValidFoodStocks(String stockName) {
         return foodStockRepo.findValidFoodStocks(stockName);  // Assuming findValidFoodStocks is defined in the repo
     }
