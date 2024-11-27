@@ -4,6 +4,7 @@ import HotelManagement.costing.Costing;
 import HotelManagement.costing.CostingRepo;
 import HotelManagement.exemption.ResourceNotFoundException;
 import HotelManagement.foodStock.FoodStock;
+import HotelManagement.foodStock.FoodStockDto;
 import HotelManagement.foodStock.FoodStockRepo;
 import HotelManagement.foodStock.unitMeasurement.UnitMeasurement;
 import HotelManagement.foodStock.unitMeasurement.UnitMeasurementRepo;
@@ -115,29 +116,36 @@ public CostPerRequest createRequestCost(CostPerRequestDto cost) {
     }
 
     private BigDecimal processSingleFoodStock(FoodStockRequestDto foodStockDto, Recipe recipe, BigDecimal requestedQuantity) {
-        Long id = foodStockDto.getId();
+
         BigDecimal totalCost = BigDecimal.ZERO;
 
-        FoodStock foodStock = foodStockRepo.findByIdAndDeletedFlagAndExpired(id, "N", false)
-                .orElseThrow(() -> new ResourceNotFoundException("FoodStock with ID " + id + " not found or invalid."));
+        // Fetch the FoodStock entity if it exists and is valid
+
+
+        FoodStock foodStock = validatedFoodStock(recipe,foodStockDto);
         List<FoodStock> validStocks = fetchValidFoodStocks(foodStock.getStockName());
         BigDecimal totalAvailableQuantity = fetchTotalAvailableQuantity(foodStock.getStockName());
 
+        // Ensure the requested quantity does not exceed the available quantity
         if (totalAvailableQuantity.compareTo(requestedQuantity) < 0) {
             throw new RuntimeException("Requested quantity exceeds available quantity for " +
                     foodStock.getStockName() + ". Available: " + totalAvailableQuantity);
         }
 
         BigDecimal remainingQuantity = requestedQuantity;
+
+        // Process each valid stock to fulfill the requested quantity
         for (FoodStock stock : validStocks) {
             Costing costing = fetchCosting(stock.getStockNumber());
             BigDecimal costingQuantity = BigDecimal.valueOf(costing.getQuantity());
 
             if (remainingQuantity.compareTo(costingQuantity) <= 0) {
+                // Fully fulfill the remaining quantity from the current stock
                 totalCost = totalCost.add(calculateFoodStockPrice(stock.getStockNumber(), remainingQuantity));
                 updateFoodStockAndCosting(stock, costing, remainingQuantity);
                 break;
             } else {
+                // Partially fulfill the quantity and continue with the next stock
                 totalCost = totalCost.add(calculateFoodStockPrice(stock.getStockNumber(), costingQuantity));
                 remainingQuantity = remainingQuantity.subtract(costingQuantity);
                 updateFoodStockAndCosting(stock, costing, costingQuantity);
@@ -146,8 +154,44 @@ public CostPerRequest createRequestCost(CostPerRequestDto cost) {
 
         return totalCost.setScale(2, RoundingMode.HALF_UP);
     }
+
+    public FoodStock validatedFoodStock(Recipe recipe, FoodStockRequestDto foodStockDto) {
+        Long id = foodStockDto.getId();
+
+        // Check if the FoodStock exists and is valid
+        Optional<FoodStock> optionalFoodStock = foodStockRepo.findByIdAndDeletedFlagAndExpiredAndDepletedFlag(id, "N", false, "N");
+        if (!optionalFoodStock.isPresent()) {
+            String stockName = foodStockRepo.findNameById(id);
+            throw new ResourceNotFoundException( stockName + " not found, invalid, or depleted.");
+        }
+
+        FoodStock foodStock = optionalFoodStock.get();
+
+        // Validate if the FoodStock is part of the Recipe's foodStocks list
+        if (!recipe.getFoodStockSet().contains(foodStock)) {
+            String stockName = foodStockRepo.findNameById(id);
+            throw new IllegalArgumentException( stockName + " is not part of the recipe.");
+        }
+
+        // Check for missing FoodStock items
+        List<Long> recipeFoodStockIds = recipe.getFoodStockSet()
+                .stream()
+                .map(FoodStock::getId)
+                .toList();
+
+        List<Long> missingFoodStockIds = recipeFoodStockIds.stream()
+                .filter(recipeFoodStockId -> !recipeFoodStockIds.contains(recipeFoodStockId))
+                .toList();
+
+        if (!missingFoodStockIds.isEmpty()) {
+            throw new IllegalArgumentException("The following FoodStock items are missing: " + missingFoodStockIds);
+        }
+
+        return foodStock;
+    }
+
     private List<FoodStock> fetchValidFoodStocks(String stockName) {
-        return foodStockRepo.findValidFoodStocks(stockName);  // Assuming `findValidFoodStocks` is defined in the repo
+        return foodStockRepo.findValidFoodStocks(stockName);  // Assuming findValidFoodStocks is defined in the repo
     }
     private BigDecimal fetchTotalAvailableQuantity(String stockName) {
         // This assumes you have a method in your foodStockRepo to fetch the total quantity by stock name
@@ -156,27 +200,37 @@ public CostPerRequest createRequestCost(CostPerRequestDto cost) {
 
 
     private BigDecimal calculateFoodStockPrice(String stockNumber, BigDecimal quantity) {
-        Costing costing = fetchCosting(stockNumber);
+        // Fetch the Costing object using the stockNumber
+        Optional<Costing> optionalCosting = costingRepo.findByStockNumber(stockNumber);
 
-        // Ensure unit price is not null and set scale for precision
-        BigDecimal unitPrice = BigDecimal.valueOf(costing.getUnitPrice() == null ? 0.0 : costing.getUnitPrice()).setScale(2, RoundingMode.HALF_UP);
+        // Check if the Costing object exists
+        if (optionalCosting.isPresent()) {
+            Costing costing = optionalCosting.get();
 
-        // Ensure quantity is valid and set scale for precision
-        BigDecimal roundedQuantity = quantity.setScale(2, RoundingMode.HALF_UP);
+            // Log the unitPrice and quantity
+            System.out.println("Unit Price: " + costing.getUnitPrice());
+            System.out.println("Quantity: " + quantity);
 
-        // Log the values before calculating
-        System.out.println("Unit Price: " + unitPrice);
-        System.out.println("Quantity: " + roundedQuantity);
+            // If unit price is null, throw an exception
+            if (costing.getUnitPrice() == null) {
+                throw new IllegalStateException("Unit price is not set for FoodStock: " + stockNumber);
+            }
 
-        // Perform the multiplication and return the result
-        BigDecimal totalPrice = unitPrice.multiply(roundedQuantity);
+            // Calculate the total price by multiplying the unit price with the quantity
+            BigDecimal totalPrice = BigDecimal.valueOf(costing.getUnitPrice())
+                    .multiply(quantity);
 
-        // Log the calculated price
-        System.out.println("Total Price before rounding: " + totalPrice);
+            // Log the totalPrice before rounding
+            System.out.println("Total Price before rounding: " + totalPrice);
 
-        // Return the result rounded to two decimal places
-        return totalPrice.setScale(2, RoundingMode.HALF_UP);
+            // Round the total price to 2 decimal places
+            return totalPrice.setScale(2, RoundingMode.HALF_UP);
+        } else {
+            // If no Costing is found, throw an exception
+            throw new ResourceNotFoundException("Costing not found for FoodStock: " + stockNumber);
+        }
     }
+
 
     private Costing fetchCosting(String stockNumber) {
         return costingRepo.findByStockNumber(stockNumber)

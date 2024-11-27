@@ -14,8 +14,8 @@ public interface FoodStockRepo extends JpaRepository<FoodStock,Long> {
     List<FoodStock> findAllByDeletedFlagAndExpiredOrderByExpiryDateAsc(String deletedFlag, boolean expired);
     @Query("SELECT f FROM FoodStock f WHERE f.expiryDate BETWEEN :startDate AND :endDate AND f.expired = false")
     List<FoodStock> findItemsExpiringInRange(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
-
-    Optional<FoodStock> findByIdAndDeletedFlagAndExpired (Long id, String deletedFlag, boolean expired);
+    Optional<FoodStock> findByIdAndDeletedFlagAndExpired(Long id, String deletedFlag, boolean expired);
+    Optional<FoodStock> findByIdAndDeletedFlagAndExpiredAndDepletedFlag (Long id, String deletedFlag, boolean expired, String depletedFlag);
     @Query(value = "SELECT MAX(CAST(SUBSTRING(stock_number, 4) AS UNSIGNED)) " +
             "FROM food_stock", nativeQuery = true)
     Integer findLastServiceNumber();
@@ -40,6 +40,13 @@ public interface FoodStockRepo extends JpaRepository<FoodStock,Long> {
             nativeQuery = true
     )
     List<UniqueStockNameProjection> findUniqueStockName();
+    @Query(
+            value = "SELECT stock_name AS stockName " +
+                    "FROM food_stock " +
+                    "WHERE id = :id",
+            nativeQuery = true
+    )
+    String findNameById(@Param("id") Long id);
 
 
     @Query(value = "SELECT * " +
