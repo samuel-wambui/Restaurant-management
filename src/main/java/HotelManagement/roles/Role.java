@@ -1,6 +1,9 @@
 package HotelManagement.roles;
 
+import HotelManagement.employee.Employee;
 import HotelManagement.employee.Permissions;
+import HotelManagement.recipe.Recipe;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -10,6 +13,7 @@ import lombok.ToString;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -60,6 +64,10 @@ public class Role {
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Date deletedTime;
+
+    @ManyToMany(mappedBy = "role")
+    @JsonIgnore // Prevent recursion with Recipe
+    private Set<Employee> Employees = new HashSet<>();
 
     // Convert Role to Spring Security authorities
     public List<SimpleGrantedAuthority> getAuthorities() {

@@ -1,6 +1,7 @@
 package HotelManagement.employee;
 
 import HotelManagement.roles.Erole;
+import HotelManagement.roles.Role;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -32,7 +33,7 @@ public class EmployeeDTO {
     private LocalDateTime resetVerificationTime;
 
     private String deletedFlag;
-    private List<Erole> roles;
+    private List<Role> roles;
     private String assignedTables;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd-MM-yyyy HH:mm")

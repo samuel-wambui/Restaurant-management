@@ -66,7 +66,9 @@ public class EmployeeService {
 //        return employeeRepository.findByUsername(username);
 //    }
 
-    public Employee updateEmployee(Employee employee) {
+    public Employee assignRole(EmployeeRoleDTO employeeRoleDTO) {
+        Employee employee  = new Employee();
+        employee.setRole(employeeRoleDTO.getRoles());
         return employeeRepository.save(employee);
     }
 

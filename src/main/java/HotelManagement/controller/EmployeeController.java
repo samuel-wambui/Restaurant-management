@@ -3,6 +3,8 @@ package HotelManagement.controller;
 import HotelManagement.EmailApp.EmailSender;
 import HotelManagement.EmailApp.Model;
 import HotelManagement.employee.Employee;
+import HotelManagement.employee.EmployeeDTO;
+import HotelManagement.employee.EmployeeRoleDTO;
 import HotelManagement.employee.EmployeeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -68,7 +70,7 @@ public class EmployeeController {
 
             if (employeeService.verifyCode(id, verificationCode)) {
                 employee.setVerifiedFlag(true);
-                employeeService.updateEmployee(employee);
+                //employeeService.updateEmployee(employee);
 
                 String toEmail = employee.getEmail();
                 String text = "Dear " + employee.getUsername() + ", your account has been successfully verified. Thank you!";
@@ -95,10 +97,10 @@ public class EmployeeController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateEmployee(@PathVariable("id") long id, @RequestBody Employee employee) {
+    public ResponseEntity<?> assignRoleToEmployee(@PathVariable("id") long id, @RequestBody EmployeeRoleDTO employee) {
         try {
-            employee.setId(id);
-            Employee updatedEmployee = employeeService.updateEmployee(employee);
+
+            Employee updatedEmployee = employeeService.assignRole(employee);
             return ResponseEntity.ok(updatedEmployee);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating employee: " + e.getMessage());

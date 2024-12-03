@@ -11,10 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -98,7 +95,7 @@ public class Employee implements UserDetails {
   } else if (lastName != null && !lastName.isEmpty()) {
    return lastName;
   }
-  return "UnknownUser";
+  return "Anonymous User";
  }
 
 
