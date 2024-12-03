@@ -61,7 +61,9 @@ public CostPerRequest createRequestCost(CostPerRequestDto cost) {
 
     private CostPerRequest initializeCostPerRequest() {
         CostPerRequest costPerRequest = new CostPerRequest();
-        costPerRequest.setRequestNumber(generateRequestNumber());
+
+
+
         System.out.println("Generated Request Number: " + costPerRequest.getRequestNumber());
         return costPerRequest;
     }
@@ -94,6 +96,7 @@ public CostPerRequest createRequestCost(CostPerRequestDto cost) {
         costPerRequest.setFoodStockPrice(totalFoodStockPrice.doubleValue());
         costPerRequest.setFoodStockQuantity(formatQuantitiesInOrder(stockNameToQuantityMap));
         costPerRequest.setStockName(String.join(", ", stockNameToQuantityMap.keySet()));
+        costPerRequest.setRequestNumber(generateRequestNumber());
 
         System.out.println("Total FoodStock Price: " + totalFoodStockPrice);
         System.out.println("Quantities in Recipe Order: " + stockNameToQuantityMap);
@@ -162,26 +165,30 @@ public CostPerRequest createRequestCost(CostPerRequestDto cost) {
 
         // Retrieve the FoodStock object from the repository
         Optional<FoodStock> optionalFoodStock = foodStockRepo.findByIdAndDeletedFlagAndExpiredAndDepletedFlag(id, "N", false);
-        System.out.println("FoodStock retrieval result: " + optionalFoodStock);
+        if (optionalFoodStock.isPresent()){
+            FoodStock foodStock = optionalFoodStock.get();
+        System.out.println("FoodStock retrieval result: " + foodStock.getStockName());
 
         // If the FoodStock does not exist or is invalid, throw a ResourceNotFoundException
         if (optionalFoodStock.isEmpty()) {
             String errorMessage = "FoodStock with ID " + id + " not found, invalid, or depleted.";
             System.out.println(errorMessage);
             throw new ResourceNotFoundException(errorMessage);
-        }
+        }}
 
         // Retrieve the validated FoodStock from the Optional
         FoodStock foodStock = optionalFoodStock.get();
-        System.out.println("Validated FoodStock: " + foodStock);
+        System.out.println("Validated FoodStock: " + foodStock.getStockName());
 
         // Compare the Recipe's foodStock set with the incoming request's FoodStock
-        Set<Long> recipeFoodStockIds = recipe.getFoodStockSet()
-                .stream()
-                .map(FoodStock::getId)
-                .collect(Collectors.toSet());
+        Set<String> recipeFoodStockNames = recipe.getFoodStockSet()
 
-        if (!recipeFoodStockIds.contains(foodStock.getId())) {
+                .stream()
+                .map(FoodStock::getStockName)
+                .collect(Collectors.toSet());
+        //System.out.println("found ids " + recipeFoodStockIds );
+
+        if (!recipeFoodStockNames.contains(foodStock.getStockName())) {
             // Find the unmatched FoodStock(s)
             String unmatchedFoodStocks = recipe.getFoodStockSet()
                     .stream()
