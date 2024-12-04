@@ -8,5 +8,6 @@ import java.util.Set;
 
 @Data
 public class EmployeeRoleDTO {
-    private List<Role> roles;
+    private Long roleIds;
+    private Long employeeId;
 }

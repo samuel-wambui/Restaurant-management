@@ -9,6 +9,7 @@ import HotelManagement.dto.LoginDto;
 import HotelManagement.dto.ResetPasswordDto;
 import HotelManagement.jwt.JwtService;
 import HotelManagement.repository.EmployeeRepository;
+import HotelManagement.roles.Role;
 import HotelManagement.roles.RoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -67,10 +68,26 @@ public class EmployeeService {
 //    }
 
     public Employee assignRole(EmployeeRoleDTO employeeRoleDTO) {
-        Employee employee  = new Employee();
-        employee.setRole(employeeRoleDTO.getRoles());
+        // Retrieve the employee from the database using the ID
+        Optional<Employee> optionalEmployee = employeeRepository.findById(employeeRoleDTO.getEmployeeId());
+        if (!optionalEmployee.isPresent()) {
+            throw new RuntimeException("Employee not found with ID: " + employeeRoleDTO.getEmployeeId());
+        }
+        Employee employee = optionalEmployee.get();
+
+        // Retrieve roles based on role IDs from the DTO
+        List<Role> roles = roleRepository.findAllById(Collections.singleton(employeeRoleDTO.getRoleIds()));
+        if (roles.isEmpty()) {
+            throw new RuntimeException("No roles found for the provided role IDs");
+        }
+
+        // Assign roles to the employee
+        employee.setRole(roles);
+
+        // Save and return the updated employee
         return employeeRepository.save(employee);
     }
+
 
     public void deleteEmployee(long id) {
         employeeRepository.deleteById(id);

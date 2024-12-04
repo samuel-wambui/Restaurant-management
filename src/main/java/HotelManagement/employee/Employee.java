@@ -1,5 +1,6 @@
 package HotelManagement.employee;
 
+import HotelManagement.roles.Erole;
 import HotelManagement.roles.Role;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -216,4 +217,6 @@ public class Employee implements UserDetails {
  public void setDeletedFlag(boolean isDeleted) {
   this.deletedFlag = isDeleted ? "Y" : "N";
  }
+
+
 }

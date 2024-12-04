@@ -1,5 +1,6 @@
 package HotelManagement.controller;
 
+import HotelManagement.ApiResponse.ApiResponse;
 import HotelManagement.EmailApp.EmailSender;
 import HotelManagement.EmailApp.Model;
 import HotelManagement.employee.Employee;
@@ -96,14 +97,20 @@ public class EmployeeController {
         }
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> assignRoleToEmployee(@PathVariable("id") long id, @RequestBody EmployeeRoleDTO employee) {
+    @PostMapping("/assignRoles")
+    public ResponseEntity<ApiResponse<Employee>> assignRoleToEmployee(@RequestBody EmployeeRoleDTO employee) {
         try {
-
+            ApiResponse response = new ApiResponse<>();
             Employee updatedEmployee = employeeService.assignRole(employee);
-            return ResponseEntity.ok(updatedEmployee);
+            response.setMessage("role successfully assigned to the user");
+            response.setStatusCode(HttpStatus.OK.value());
+            response.setEntity(updatedEmployee);
+            return new ResponseEntity (response, HttpStatus.OK);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating employee: " + e.getMessage());
+            ApiResponse response = new ApiResponse<>();
+            response.setMessage("Internal Server Error");
+            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            return new ResponseEntity(response,HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
