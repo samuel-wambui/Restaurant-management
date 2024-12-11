@@ -8,7 +8,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import java.util.List;
 import java.util.Optional;
 
-public interface EmployeeRepository extends JpaRepository<Employee, Long> {
+public interface
+EmployeeRepository extends JpaRepository<Employee, Long> {
 
    Optional<Employee> findByUsernameAndDeletedFlag(String username, String deletedFlag);
 

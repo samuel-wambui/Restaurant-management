@@ -124,7 +124,7 @@ public class EmployeeController {
         }
     }
 
-    @GetMapping
+    @GetMapping("/getAll")
     public ResponseEntity<List<Employee>> getAllEmployees() {
         try {
             List<Employee> employees = employeeServiceE.findAllEmployees();
