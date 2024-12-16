@@ -306,5 +306,49 @@ public CostPerRequest createRequestCost(CostPerRequestDto cost) {
             String formattedNumber = String.format("%03d", nextNumber);
             return "REQ" + formattedNumber;
         }
+
+
+    @Transactional
+    public CostPerRequest updateRequestCost(Long id, CostPerRequestDto updatedCost) {
+        // Fetch existing CostPerRequest
+        CostPerRequest existingCost = costPerRequestRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("CostPerRequest not found with ID: " + id));
+
+        System.out.println("Updating CostPerRequest ID: " + id);
+
+        // Update Recipe Number if applicable
+        if (updatedCost.getRecipeNumber() != null) {
+            Recipe recipe = fetchRecipe(updatedCost.getRecipeNumber());
+            existingCost.setRecipeNumber(recipe.getRecipeNumber());
+        }
+
+        // Update Food Stock costs and quantities
+        if (updatedCost.getFoodStocks() != null) {
+            processFoodStocks(updatedCost, fetchRecipe(existingCost.getRecipeNumber()), existingCost);
+        }
+
+        // Update Spices
+        if (updatedCost.getSpiceNumber() != null) {
+            processSpices(updatedCost, fetchRecipe(existingCost.getRecipeNumber()), existingCost);
+        }
+
+        // Save updated entity
+        return costPerRequestRepo.save(existingCost);
     }
+    public CostPerRequest getRequestCostById(Long id) {
+        return costPerRequestRepo.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("CostPerRequest not found with ID: " + id));
+    }
+    public List<CostPerRequest> getAllRequestCosts() {
+        return costPerRequestRepo.findAll();
+    }
+public void deleteCostPerRequest(Long id){
+    Optional<CostPerRequest> optionalCostPerRequest = costPerRequestRepo.findById(id);
+    if (optionalCostPerRequest.isPresent()){
+        CostPerRequest deletedCostPerRequest = optionalCostPerRequest.get();
+        deletedCostPerRequest.setDeletedFlag("Y");
+        costPerRequestRepo.save(deletedCostPerRequest);
+    }
+}
+}
 

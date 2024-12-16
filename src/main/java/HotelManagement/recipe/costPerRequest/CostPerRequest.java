@@ -24,4 +24,5 @@ public class CostPerRequest {
     private String foodStockQuantity;
     private String spiceNumber;
     private Double foodStockPrice;
+    private String deletedFlag= "Y";
 }
