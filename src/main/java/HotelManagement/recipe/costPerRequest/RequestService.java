@@ -4,13 +4,11 @@ import HotelManagement.costing.Costing;
 import HotelManagement.costing.CostingRepo;
 import HotelManagement.exemption.ResourceNotFoundException;
 import HotelManagement.foodStock.FoodStock;
-import HotelManagement.foodStock.FoodStockDto;
 import HotelManagement.foodStock.FoodStockRepo;
 import HotelManagement.foodStock.unitMeasurement.UnitMeasurement;
 import HotelManagement.foodStock.unitMeasurement.UnitMeasurementRepo;
 import HotelManagement.recipe.Recipe;
 import HotelManagement.recipe.RecipeRepo;
-import HotelManagement.spices.SpicesAndSeasonings;
 import HotelManagement.spices.SpicesAndSeasoningsRepo;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -342,13 +340,16 @@ public CostPerRequest createRequestCost(CostPerRequestDto cost) {
     public List<CostPerRequest> getAllRequestCosts() {
         return costPerRequestRepo.findAll();
     }
-public void deleteCostPerRequest(Long id){
-    Optional<CostPerRequest> optionalCostPerRequest = costPerRequestRepo.findById(id);
-    if (optionalCostPerRequest.isPresent()){
-        CostPerRequest deletedCostPerRequest = optionalCostPerRequest.get();
-        deletedCostPerRequest.setDeletedFlag("Y");
-        costPerRequestRepo.save(deletedCostPerRequest);
+    public CostPerRequest deleteCostPerRequest(Long id) {
+        Optional<CostPerRequest> optionalCostPerRequest = costPerRequestRepo.findById(id);
+        if (optionalCostPerRequest.isPresent()) {
+            CostPerRequest deletedCostPerRequest = optionalCostPerRequest.get();
+            deletedCostPerRequest.setDeletedFlag("Y"); // Soft delete using 'Y' flag
+            return costPerRequestRepo.save(deletedCostPerRequest); // Save and return the updated entity
+        } else {
+            throw new ResourceNotFoundException("CostPerRequest with ID " + id + " not found");
+        }
     }
-}
+
 }
 
