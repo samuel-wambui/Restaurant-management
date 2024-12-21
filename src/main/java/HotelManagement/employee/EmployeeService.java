@@ -302,17 +302,30 @@ public class EmployeeService {
 
             // Generate the token with username and authorities
             String token = jwtService.generateToken(userName, authorities);
-            String refreshToken = jwtService.generateRefreshToken(userName,authorities);
+            String refreshToken = jwtService.generateRefreshToken(userName, authorities);
 
-            System.out.println("JWT Token: " + token);
-            System.out.println("refreshTocken" + refreshToken);
+            // Check if the employee exists
+            Optional<Employee> optionalEmployee = employeeRepository.findByEmailAndDeletedFlag(loginDto.getEmail(), "N");
+            if (optionalEmployee.isPresent()) {
+                Employee employee = optionalEmployee.get();
+                System.out.println("JWT Token: " + token);
+                System.out.println("Refresh Token: " + refreshToken);
 
-            // Set success response
-            response.setMessage("Login successful");
-            response.setToken(token);
-            response.setRefreshToken(refreshToken);// Set the token in the response
-            response.setStatusCode(HttpStatus.OK.value());
-            return ResponseEntity.ok(response);
+                // Set success response
+                response.setMessage("Login successful");
+                response.setEmployee(employee);
+                response.setToken(token);
+                response.setRefreshToken(refreshToken);
+                response.setStatusCode(HttpStatus.OK.value());
+
+                return ResponseEntity.ok(response);
+            } else {
+                // Employee not found case
+                response.setMessage("Employee not found or has been deleted.");
+                response.setStatusCode(HttpStatus.NOT_FOUND.value());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+
         } catch (Exception ex) {
             // Handle exceptions and return an error response
             response.setMessage("An error occurred during login: " + ex.getMessage());
@@ -320,6 +333,7 @@ public class EmployeeService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
     public ApiResponse verifyForgotPassword(ResetPasswordDto resetPasswordDto) {
         ApiResponse response = new ApiResponse<>();
         Optional<Employee> optionalEmployee = employeeRepository.findByEmailAndDeletedFlag(resetPasswordDto.getEmail(), "N");
