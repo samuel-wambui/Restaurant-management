@@ -290,6 +290,7 @@ public class EmployeeService {
     public ResponseEntity<LoginApiResponse> verify(LoginDto loginDto) {
         LoginApiResponse response = new LoginApiResponse();
 
+
         try {
             // Load the user by username
             UserDetails userDetails = userDetailsService.loadUserByUsername(loginDto.getEmail());
