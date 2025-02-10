@@ -262,8 +262,8 @@ public class EmployeeService {
             loginAttempts.put(username, 0);
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // Call the verify method to return the token and message
-            return verify(loginDto); // Return the response from verify, which includes the token
+            // Call verify method to generate token and complete login process
+            return verify(loginDto);
         } catch (BadCredentialsException ex) {
             loginAttempts.put(username, attempts + 1);
             int remainingAttempts = MAX_LOGIN_ATTEMPTS - loginAttempts.get(username);
@@ -293,41 +293,51 @@ public class EmployeeService {
         try {
             // Load the user by username
             UserDetails userDetails = userDetailsService.loadUserByUsername(loginDto.getEmail());
-            String userName = loginDto.getEmail();
 
-            // Convert the authorities to a List<String>
+            // Convert authorities to a List<String>
             List<String> authorities = userDetails.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority) // Convert GrantedAuthority to String
+                    .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.toList());
 
-            // Generate the token with username and authorities
-            String token = jwtService.generateToken(userName, authorities);
-            String refreshToken = jwtService.generateRefreshToken(userName, authorities);
+            // Generate the token
+            String accessToken = jwtService.generateToken(userDetails.getUsername(), authorities);
+            String refreshToken = jwtService.generateRefreshToken(userDetails.getUsername(), authorities);
 
-            // Check if the employee exists
+            // Fetch employee details
             Optional<Employee> optionalEmployee = employeeRepository.findByEmailAndDeletedFlag(loginDto.getEmail(), "N");
             if (optionalEmployee.isPresent()) {
                 Employee employee = optionalEmployee.get();
-                System.out.println("JWT Token: " + token);
-                System.out.println("Refresh Token: " + refreshToken);
 
-                // Set success response
+                // Prepare employee response object
+                EmployeeResponseDto employeeData = new EmployeeResponseDto();
+                employeeData.setId(employee.getId());
+                employeeData.setUsername(employee.getUsername());
+                employeeData.setEmail(employee.getEmail());
+                employeeData.setPhoneNumber(employee.getPhoneNumber());
+                employeeData.setRoles(authorities.stream().filter(role -> role.startsWith("ROLE_")).toList());
+                employeeData.setPermissions(authorities);
+                employeeData.setVerified("Y".equals(employee.getVerifiedFlag()));
+                employeeData.setLocked("Y".equals(employee.getLockedFlag()));
+
+                // Prepare token data
+                Map<String, Object> tokenData = new HashMap<>();
+                tokenData.put("accessToken", accessToken);
+                tokenData.put("refreshToken", refreshToken);
+                tokenData.put("expiresIn", 3600);
+
+                // Populate response
                 response.setMessage("Login successful");
-                response.setEmployee(employee);
-                response.setToken(token);
-                response.setRefreshToken(refreshToken);
                 response.setStatusCode(HttpStatus.OK.value());
+                response.setEmployee(employeeData); // Now it accepts EmployeeResponseDto
+                response.setToken(tokenData);
 
                 return ResponseEntity.ok(response);
-            } else {
-                // Employee not found case
-                response.setMessage("Employee not found or has been deleted.");
-                response.setStatusCode(HttpStatus.NOT_FOUND.value());
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
             }
 
+            response.setMessage("Employee not found or has been deleted.");
+            response.setStatusCode(HttpStatus.NOT_FOUND.value());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
         } catch (Exception ex) {
-            // Handle exceptions and return an error response
             response.setMessage("An error occurred during login: " + ex.getMessage());
             response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);

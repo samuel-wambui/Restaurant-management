@@ -1,6 +1,7 @@
 package HotelManagement.ApiResponse;
 
 import HotelManagement.employee.Employee;
+import HotelManagement.employee.EmployeeResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,7 +12,7 @@ import lombok.NoArgsConstructor;
 public class LoginApiResponse <T> {
     private String message;
     private Integer statusCode;
-    private Employee employee;
+    private EmployeeResponseDto employee;
     private T token;
     private T refreshToken;
 }
