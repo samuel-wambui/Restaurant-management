@@ -33,6 +33,7 @@ public class JwtService {
         }
     }
 
+
     // Generate token with authorities
     public String generateToken(String username, List<String> authorities) {
         Map<String, Object> claims = new HashMap<>();
