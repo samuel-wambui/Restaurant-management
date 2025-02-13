@@ -1,4 +1,4 @@
-name: Deploy to Ubuntu Server (Self-Hosted)
+name: Deploy to Ubuntu Server
 
 on:
   push:
@@ -7,13 +7,13 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted  # Use your self-hosted runner
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Ensures a full clone
+          fetch-depth: 0  # Ensures full clone from the start
 
       - name: Set up Java
         uses: actions/setup-java@v3
@@ -23,19 +23,22 @@ jobs:
 
       - name: Build Java Project
         run: |
-          mvn clean package  # Build your project; adjust if you use a different build tool
+          mvn clean package  # Builds the project without skipping tests since none exist
 
-      - name: Deploy Application
+      - name: Install SSH Client
+        run: sudo apt-get install -y sshpass
+
+      - name: Copy JAR to Server
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          # Ensure the deployment folder exists
-          mkdir -p /home/samuel/javaProjects
-          
-          # Copy the built JAR file to the deployment folder
-          cp target/HotelManagement-0.0.1-SNAPSHOT.jar /home/samuel/javaProjects/
-          
-          # Stop any running instance of the application (if running)
-          pkill -f HotelManagement-0.0.1-SNAPSHOT.jar || true
-          
-          # Start the application in the background and log output
-          nohup java -jar /home/samuel/javaProjects/HotelManagement-0.0.1-SNAPSHOT.jar > /home/samuel/javaProjects/app.log 2>&1 &
+          sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no target/HotelManagement-0.0.1-SNAPSHOT.jar samuel@192.168.0.100:/home/samuel/javaProjects/
 
+      - name: Restart Java Application on Server
+        env:
+          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no samuel@192.168.0.100 << 'EOF'
+          pkill -f HotelManagement-0.0.1-SNAPSHOT.jar || true  # Stop any existing process
+          nohup java -jar /home/samuel/javaProjects/HotelManagement-0.0.1-SNAPSHOT.jar > /home/samuel/javaProjects/app.log 2>&1 &
+          EOF
