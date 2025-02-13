@@ -23,23 +23,18 @@ jobs:
 
       - name: Build Java Project
         run: |
-          mvn -B clean package  # Ensures batch mode for Maven build
+          mvn clean package  # Builds the project without skipping tests since none exist
 
       - name: Install SSH Client
-        run: |
-          sudo apt-get update && sudo apt-get install -y sshpass
+        run: sudo apt-get install -y sshpass
 
       - name: Copy JAR to Server
-        env:
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no target/HotelManagement-0.0.1-SNAPSHOT.jar samuel@192.168.0.100:/home/samuel/javaProjects/
+          sshpass -p "samuel@1999" scp -o StrictHostKeyChecking=no target/HotelManagement-0.0.1-SNAPSHOT.jar samuel@192.168.0.100:/home/samuel/javaProjects/
 
       - name: Restart Java Application on Server
-        env:
-          SSH_PASSWORD: ${{ secrets.SSH_PASSWORD }}
         run: |
-          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no samuel@192.168.0.100 << 'EOF'
+          sshpass -p "samuel@1999" ssh -o StrictHostKeyChecking=no samuel@192.168.0.100 << 'EOF'
           pkill -f HotelManagement-0.0.1-SNAPSHOT.jar || true  # Stop any existing process
           nohup java -jar /home/samuel/javaProjects/HotelManagement-0.0.1-SNAPSHOT.jar > /home/samuel/javaProjects/app.log 2>&1 &
           EOF
