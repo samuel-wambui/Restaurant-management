@@ -284,6 +284,7 @@ public class EmployeeService {
             response.setMessage("An error occurred during login: " + ex.getMessage());
             response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+
         }
     }
 
