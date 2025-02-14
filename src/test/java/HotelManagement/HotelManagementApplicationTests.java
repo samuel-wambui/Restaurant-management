@@ -9,8 +9,7 @@ class HotelManagementApplicationTests {
 	@Autowired
 	private EmailSender emailSender;
 
-	@Autowired
-	private Model model;
+
 
 
 }
