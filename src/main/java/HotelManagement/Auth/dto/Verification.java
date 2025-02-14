@@ -1,4 +1,4 @@
-package HotelManagement.controller;
+package HotelManagement.Auth.dto;
 
 import lombok.Data;
 

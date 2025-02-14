@@ -1,11 +1,10 @@
 package HotelManagement.security;
 
-import HotelManagement.employee.Employee;
-import HotelManagement.repository.EmployeeRepository;
+import HotelManagement.Auth.user.User;
+import HotelManagement.Auth.user.UserRepository;
 import HotelManagement.roles.Role;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -18,21 +17,21 @@ import java.util.stream.Collectors;
 @Service
 public class DetailsService implements UserDetailsService {
 
-    private final EmployeeRepository employeeRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    public DetailsService(EmployeeRepository employeeRepository) {
-        this.employeeRepository = employeeRepository;
+    public DetailsService(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         // Adjusted to check for "N" (not deleted) in the deletedFlag
-        Employee employee = employeeRepository.findByEmailAndDeletedFlag(email, "N")
+        User user = userRepository.findByEmailAndDeletedFlag(email, "N")
                 .orElseThrow(() -> new UsernameNotFoundException("email not found" ));
 
         // Mapping roles to authorities (permissions)
-        return new User(employee.getUsername(), employee.getPassword(), mapRolesToAuthorities(employee.getRole()));
+        return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), mapRolesToAuthorities(user.getRole()));
     }
 
     // Adjusted to work with the Erole enum for authorities

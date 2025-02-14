@@ -1,4 +1,4 @@
-package HotelManagement.employee;
+package HotelManagement.roles;
 
 import lombok.RequiredArgsConstructor;
 

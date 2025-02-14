@@ -1,4 +1,4 @@
-package HotelManagement.dto;
+package HotelManagement.Auth.dto;
 
 import HotelManagement.roles.Role;
 import lombok.Builder;

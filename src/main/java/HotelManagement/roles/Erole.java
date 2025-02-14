@@ -1,6 +1,5 @@
 package HotelManagement.roles;
 
-import HotelManagement.employee.Permissions;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -10,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static HotelManagement.employee.Permissions.*;
+import static HotelManagement.roles.Permissions.*;
 
 @RequiredArgsConstructor
 public enum Erole {
@@ -30,7 +29,7 @@ public enum Erole {
             MANAGER_DELETE
 
     )),
-    ADMIN(Set.of(
+    ROLE_ADMIN(Set.of(
             ADMIN_READ,
             ADMIN_UPDATE,
             ADMIN_CREATE,

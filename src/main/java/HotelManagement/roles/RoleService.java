@@ -1,6 +1,5 @@
 package HotelManagement.roles;
 
-import HotelManagement.employee.Permissions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

@@ -1,8 +1,6 @@
 package HotelManagement.roles;
 
-import HotelManagement.employee.Employee;
-import HotelManagement.employee.Permissions;
-import HotelManagement.recipe.Recipe;
+import HotelManagement.Auth.user.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
@@ -67,7 +65,7 @@ public class Role {
 
     @ManyToMany(mappedBy = "role")
     @JsonIgnore // Prevent recursion with Recipe
-    private Set<Employee> Employees = new HashSet<>();
+    private Set<User> users = new HashSet<>();
 
     // Convert Role to Spring Security authorities
     public List<SimpleGrantedAuthority> getAuthorities() {
