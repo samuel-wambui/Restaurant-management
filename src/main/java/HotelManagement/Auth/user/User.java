@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -82,9 +83,10 @@ public class User implements UserDetails {
    return List.of();
   }
   return role.stream()
-          .flatMap(r -> r.getAuthorities().stream())
+          .map(r -> new SimpleGrantedAuthority(r.getName()))  // Return only the role name
           .collect(Collectors.toList());
  }
+
 
 
  @Override

@@ -69,10 +69,7 @@ public class Role {
 
     // Convert Role to Spring Security authorities
     public List<SimpleGrantedAuthority> getAuthorities() {
-        List<SimpleGrantedAuthority> authorities = permissions.stream()
-                .map(permission -> new SimpleGrantedAuthority(permission.name()))
-                .collect(Collectors.toList());
-        authorities.add(new SimpleGrantedAuthority("ROLE_" + this.name));
-        return authorities;
+        return List.of(new SimpleGrantedAuthority("ROLE_" + this.name));  // Only adds the role
     }
+
 }

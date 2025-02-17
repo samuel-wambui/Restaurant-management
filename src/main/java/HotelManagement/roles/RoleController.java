@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Set;
 @RestController
-@PreAuthorize("hasRole('ADMIN')")
+//@PreAuthorize("hasRole('ADMIN')")
 @RequestMapping("/api/roles")
 public class RoleController {
     private final RoleService roleService;
@@ -19,20 +19,20 @@ public class RoleController {
     }
 
     @PostMapping("/create")
-    @PreAuthorize("hasAuthority('ADMIN_CREATE')")
+//    @PreAuthorize("hasAuthority('ADMIN_CREATE')")
     public Role createRole(@RequestParam String roleName, @RequestParam Set<Permissions> permissions, @RequestParam String postedBy) {
         return roleService.createNewRole(roleName, permissions, postedBy);
     }
 
     @PutMapping("/update/{roleId}")
-    @PreAuthorize("hasAuthority('ADMIN_UPDATE')")
+//    @PreAuthorize("hasAuthority('ADMIN_UPDATE')")
     public Role updateRolePermissions(@PathVariable Long roleId, @RequestParam Set<Permissions> permissions) {
         Role role = new Role();
         role.setId(role.getId());
         return roleService.updateRolePermissions(roleId, permissions);
     }
     @GetMapping("/getAll")
-    @PreAuthorize("hasAuthority('ADMIN_READ')")
+//    @PreAuthorize("hasAuthority('ADMIN_READ')")
     public List<Role> getAllRoles() {
         return roleService.getAllRoles();
     }
