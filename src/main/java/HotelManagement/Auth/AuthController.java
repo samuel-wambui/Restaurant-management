@@ -211,7 +211,7 @@ public class AuthController {
         return ResponseEntity.ok(tokens);
     }
 
-    @GetMapping("/requestVerificationcode")
+    @GetMapping("/requestVerificationcode/{id}")
     public ResponseEntity<ApiResponse> requestVerificationCode(@PathVariable Long id) {
         ApiResponse response = new ApiResponse<>();
         try {
@@ -228,7 +228,7 @@ public class AuthController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-    @GetMapping("/requestResetVerificationcode")
+    @GetMapping("/requestResetVerificationcode/{id}")
     public ResponseEntity<ApiResponse> requestResetVerificationCode(@PathVariable Long id) {
         ApiResponse response = new ApiResponse<>();
         try {
