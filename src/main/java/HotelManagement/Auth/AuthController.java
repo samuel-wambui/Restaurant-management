@@ -8,6 +8,7 @@ import HotelManagement.jwt.JwtBlacklistService;
 import HotelManagement.jwt.JwtService;
 import HotelManagement.jwt.TokenRefreshRequest;
 import HotelManagement.Auth.user.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -144,27 +145,24 @@ public class AuthController {
     }
 
 
-
-
     @PostMapping("/login")
     public ResponseEntity<ApiResponse> signIn(@RequestBody LoginDto loginDto) {
         ApiResponse response = new ApiResponse<>();
-        try{
+        try {
             LoginResponseDto loginResponse = authService.verify(loginDto);
             response.setStatusCode(HttpStatus.OK.value());
             response.setMessage("logged in  successfully");
             response.setEntity(loginResponse);
 
-    } catch (RuntimeException e) {
-        response.setMessage(e.getMessage());
-        response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-    } catch (Exception e) {
-        response.setMessage("internal server error");
-        response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-    }
+        } catch (RuntimeException e) {
+            response.setMessage(e.getMessage());
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+        } catch (Exception e) {
+            response.setMessage("internal server error");
+            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
         return new ResponseEntity<>(response, HttpStatus.OK);
-}
-
+    }
 
 
     @PostMapping("/logout")
@@ -213,4 +211,37 @@ public class AuthController {
         return ResponseEntity.ok(tokens);
     }
 
+    @GetMapping("/requestVerificationcode")
+    public ResponseEntity<ApiResponse> requestVerificationCode(@PathVariable Long id) {
+        ApiResponse response = new ApiResponse<>();
+        try {
+            User user = userService.requestVerificationCode(id);
+            response.setStatusCode(HttpStatus.OK.value());
+            response.setMessage("verification code sent to your email successfully");
+        } catch (EntityNotFoundException e) {
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            response.setMessage(e.getMessage());
+        } catch (Exception e) {
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            response.setMessage(e.getMessage());
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    @GetMapping("/requestResetVerificationcode")
+    public ResponseEntity<ApiResponse> requestResetVerificationCode(@PathVariable Long id) {
+        ApiResponse response = new ApiResponse<>();
+        try {
+            User user = userService.requestResetVerificationCode(id);
+            response.setStatusCode(HttpStatus.OK.value());
+            response.setMessage("password reset verification code sent to your email successfully");
+        } catch (EntityNotFoundException e) {
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            response.setMessage(e.getMessage());
+        } catch (Exception e) {
+            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
+            response.setMessage(e.getMessage());
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 }

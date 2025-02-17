@@ -6,6 +6,7 @@ import HotelManagement.Auth.dto.UserRoleDTO;
 import HotelManagement.EmailApp.EmailSender;
 import HotelManagement.roles.Role;
 import HotelManagement.roles.RoleRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -179,7 +180,48 @@ public class UserService {
         }
         return "Anonymous User";
     }
-
+    public User requestResetVerificationCode(Long id) {
+        try {
+            Optional<User> optionalUser = userRepository.findById(id);
+            if (optionalUser.isPresent()) {
+                User user = optionalUser.get();
+                user.setResetPasswordVerification(generateCode(6));
+                user.setResetVerificationTime(LocalDateTime.now());
+                 userRepository.save(user);
+                String toEmail = user.getEmail();
+                String subject =  "Password reset verification code";
+                String text =  "Dear, "+ user.getFirstName() +" your password reset verification code is  "+ user.getResetPasswordVerification();
+                emailSender.sendEmailWithVerificationCode(toEmail, subject, text ) ;
+                return  user;
+            } else {
+                throw new EntityNotFoundException("User not found with ID: " + id);
+            }
+        } catch (Exception e) {
+            // Log the exception
+            throw new RuntimeException("Error requesting verification code", e);
+        }
+    }
+    public User requestVerificationCode(Long id) {
+        try {
+            Optional<User> optionalUser = userRepository.findById(id);
+            if (optionalUser.isPresent()) {
+                User user = optionalUser.get();
+                user.setVerificationCode(generateCode(6));
+                user.setVerificationTime(LocalDateTime.now());
+                userRepository.save(user);
+                String toEmail = user.getEmail();
+                String subject =  "Password verification code";
+                String text =  "Dear, "+ user.getFirstName() +" your verification code is "+ user.getResetPasswordVerification();
+                emailSender.sendEmailWithVerificationCode(toEmail, subject, text ) ;
+                return  user;
+            } else {
+                throw new EntityNotFoundException("User not found with ID: " + id);
+            }
+        } catch (Exception e) {
+            // Log the exception
+            throw new RuntimeException("Error requesting verification code", e);
+        }
+    }
 
 
 }
