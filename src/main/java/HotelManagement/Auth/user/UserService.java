@@ -211,7 +211,7 @@ public class UserService {
                 userRepository.save(user);
                 String toEmail = user.getEmail();
                 String subject =  "Password verification code";
-                String text =  "Dear, "+ user.getFirstName() +" your verification code is "+ user.getResetPasswordVerification();
+                String text =  "Dear, "+ user.getFirstName() +" your verification code is "+ user.getVerificationCode();
                 emailSender.sendEmailWithVerificationCode(toEmail, subject, text ) ;
                 return  user;
             } else {
