@@ -27,12 +27,19 @@ public class RoleService {
         }
 
         public Role updateRolePermissions(Long roleId, Set<Permissions> newPermissions) {
-            Role role = roleRepository.findById(roleId).orElseThrow(() -> new RuntimeException("Role not found"));
+            Role role = roleRepository.findByIdAndDeletedByIsNull(roleId).orElseThrow(() -> new RuntimeException("Role not found"));
             role.setPermissions(newPermissions);
             return roleRepository.save(role);
         }
         public List<Role> getAllRoles(){
-            return roleRepository.findAll();
+            return roleRepository.getAllWhereDeletedByIsNull();
+        }
+        public Role deleteRole(Long roleId) {
+            Role role = roleRepository.findById(roleId).orElseThrow(() -> new RuntimeException("Role not found"));
+            role.setDeletedBy("admin");
+            role.setDeletedTime(new Date());
+            roleRepository.save(role);
+            return role;
         }
     }
 
