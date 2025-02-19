@@ -15,12 +15,12 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
 
     Optional<Role> findByName(String name);
 
-    List<Role> getAllWhereDeletedByIsNotNull();
-    List<Role> getAllWhereDeletedByIsNull();
+
+    List<Role> findByDeletedByNull();
 
 
 
-    Optional<Role> findByIdAndDeletedByIsNull(Long roleId);
+    Optional<Role> findByIdAndDeletedByNull(Long roleId);
 
 
 }

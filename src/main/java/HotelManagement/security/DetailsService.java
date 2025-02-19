@@ -31,7 +31,7 @@ public class DetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("email not found" ));
 
         // Mapping roles to authorities (permissions)
-        return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), mapRolesToAuthorities(user.getRole()));
+        return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), mapRolesToAuthorities(user.getRole()));
     }
 
     // Adjusted to work with the Erole enum for authorities
