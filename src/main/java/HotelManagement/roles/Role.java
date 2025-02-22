@@ -32,8 +32,9 @@ public class Role {
 
     @ElementCollection(targetClass = Permissions.class, fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
+
     @CollectionTable(name = "role_permissions", joinColumns = @JoinColumn(name = "role_id"))
-    @Column(name = "permission")
+    @Column(name = "permission",length = 100)
     private Set<Permissions> permissions;
 
     // Operational Audit fields

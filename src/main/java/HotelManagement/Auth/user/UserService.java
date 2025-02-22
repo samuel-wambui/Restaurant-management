@@ -59,6 +59,9 @@ public class UserService {
         List<Long> missingRoleIds = roleIds.stream()
                 .filter(roleId -> roles.stream().noneMatch(role -> role.getId().equals(roleId)))
                 .collect(Collectors.toList());
+        if (userDTO.getRoleIds().isEmpty()) {
+            user.setRole(roleRepository.findByName("ROLE_USER"));
+        }
 
 //        if (!missingRoleIds.isEmpty()) {
 //            throw new IllegalArgumentException("Roles not found for IDs: " + missingRoleIds);

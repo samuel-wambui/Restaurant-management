@@ -47,7 +47,13 @@ public enum Erole {
 
     )),
     ROLE_SUPERVISOR(Collections.emptySet()),
-    ROLE_WAITER(Collections.emptySet());
+    ROLE_WAITER(Collections.emptySet()),
+    ROLE_USER(Set.of(
+            USER_READ,
+            USER_UPDATE,
+            USER_CREATE,
+            USER_DELETE
+    ));
 
     @Getter
     private final Set<Permissions> permissions;
