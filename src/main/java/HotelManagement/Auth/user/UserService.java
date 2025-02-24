@@ -40,7 +40,7 @@ public class UserService {
         }
 
         if (userRepository.existsByEmailAndDeletedFlag(userDTO.getEmail(), "N")) {
-            throw new RuntimeException("Phone number already exists");
+            throw new RuntimeException("Email already exists");
         }
         User user = new User();
         user.setFirstName(userDTO.getFirstName());
