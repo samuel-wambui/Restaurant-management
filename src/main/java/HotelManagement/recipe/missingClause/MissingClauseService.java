@@ -1,17 +1,16 @@
 package HotelManagement.recipe.missingClause;
 
 import HotelManagement.exemption.ResourceNotFoundException;
-import HotelManagement.foodStock.FoodStock;
-import HotelManagement.foodStock.FoodStockRepo;
+import HotelManagement.stock.foodStock.FoodStock;
+import HotelManagement.stock.foodStock.FoodStockRepo;
 import HotelManagement.recipe.todayRecipe.OrderedRecipe;
 import HotelManagement.recipe.todayRecipe.OrderedRecipeRepo;
-import HotelManagement.spices.SpicesAndSeasonings;
-import HotelManagement.spices.SpicesAndSeasoningsRepo;
+import HotelManagement.stock.foodStock.spices.SpicesAndSeasonings;
+import HotelManagement.stock.foodStock.spices.SpicesAndSeasoningsRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 @Service

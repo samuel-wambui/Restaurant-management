@@ -1,14 +1,11 @@
 package HotelManagement.costing;
 
 
-import HotelManagement.exemption.ResourceNotFoundException;
-import HotelManagement.foodStock.FoodStock;
-import HotelManagement.foodStock.FoodStockDto;
-import HotelManagement.foodStock.FoodStockRepo;
-import HotelManagement.recipe.Recipe;
+import HotelManagement.stock.foodStock.FoodStock;
+import HotelManagement.stock.foodStock.FoodStockRepo;
 import HotelManagement.recipe.RecipeRepo;
-import HotelManagement.spices.SpicesAndSeasonings;
-import HotelManagement.spices.SpicesAndSeasoningsRepo;
+import HotelManagement.stock.foodStock.spices.SpicesAndSeasonings;
+import HotelManagement.stock.foodStock.spices.SpicesAndSeasoningsRepo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

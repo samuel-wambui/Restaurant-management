@@ -3,6 +3,8 @@ package HotelManagement.Auth.user;
 
 import HotelManagement.Auth.dto.UserDTO;
 import HotelManagement.Auth.dto.UserRoleDTO;
+import HotelManagement.Departments.DepartmentEntity;
+import HotelManagement.Departments.DepartmentRepo;
 import HotelManagement.EmailApp.EmailSender;
 import HotelManagement.roles.Role;
 import HotelManagement.roles.RoleRepository;
@@ -29,6 +31,8 @@ public class UserService {
 
     @Autowired
     private EmailSender emailSender;
+    @Autowired
+    private DepartmentRepo departmentRepo;
 
 
 
@@ -54,23 +58,18 @@ public class UserService {
         user.setUsername(generateUserName(userDTO));
 
 
-        List<Long> roleIds = userDTO.getRoleIds();
+        Set<Long> roleIds = userDTO.getRoleIds();
         List<Role> roles = roleRepository.findAllById(roleIds);
-        List<Long> missingRoleIds = roleIds.stream()
-                .filter(roleId -> roles.stream().noneMatch(role -> role.getId().equals(roleId)))
-                .collect(Collectors.toList());
-        if (userDTO.getRoleIds().isEmpty()) {
-            user.setRole(roleRepository.findByName("ROLE_USER"));
+
+        if (roleIds.isEmpty() || roles.isEmpty()) {
+            Role defaultRole = roleRepository.findByName("ROLE_USER");
+            user.setRole(Collections.singletonList(defaultRole));
+        } else {
+            user.setRole(roles);
         }
 
-//        if (!missingRoleIds.isEmpty()) {
-//            throw new IllegalArgumentException("Roles not found for IDs: " + missingRoleIds);
-//        }
-
-        user.setRole(roles);
-
-
         userRepository.save(user);
+
 
         String toEmail = user.getEmail();
         String text = "Hello " + user.getFirstName() + ", your verification code is " + user.getVerificationCode() + ".";
@@ -78,6 +77,41 @@ public class UserService {
         return userRepository.save(user);
 
     }
+
+    public User assignDepartments(Long userId, List<Long> departmentIds) {
+        // Retrieve the user by ID
+        Optional<User> optionalUser = userRepository.findById(userId);
+        if (!optionalUser.isPresent()) {
+            throw new EntityNotFoundException("User not found with ID: " + userId);
+        }
+        User user = optionalUser.get();
+
+        // Prepare a collection to hold the departments to be assigned
+        Set<DepartmentEntity> departments = new HashSet<>();
+
+        // Process each departmentId
+        for (Long departmentId : departmentIds) {
+            Optional<DepartmentEntity> optionalDepartment = departmentRepo.findById(departmentId);
+
+            // If the department is not found OR is marked as deleted, throw an exception.
+            if (!optionalDepartment.isPresent() || optionalDepartment.get().isDeleted()) {
+                // Use the department name if available; otherwise, fallback to the department ID.
+                String deptIdentifier = optionalDepartment.map(DepartmentEntity::getDepartmentName)
+                        .orElse("with ID: " + departmentId);
+                throw new EntityNotFoundException("Department " + deptIdentifier + " is not found or is deleted");
+            }
+
+            // Add the valid department to the collection
+            departments.add(optionalDepartment.get());
+        }
+
+        // Assign the departments to the user (assuming User has a Set<DepartmentEntity> departments)
+        user.setDepartments(departments);
+
+        // Save and return the updated user
+        return userRepository.save(user);
+    }
+
 
     public Optional<User> findById(long id) {
         return userRepository.findById(id);

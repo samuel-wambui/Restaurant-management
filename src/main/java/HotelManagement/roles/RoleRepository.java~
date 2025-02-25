@@ -12,7 +12,7 @@ public interface RoleRepository extends JpaRepository<Role, Long> {
     @Override
     Optional<Role> findById(Long aLong);
 
-    Role findByName(String name);
+    List<Role> findByName(String name);
 
     Optional<Role> findByNameAndDeletedByNull(String name);
     List<Role> findByDeletedByNull();

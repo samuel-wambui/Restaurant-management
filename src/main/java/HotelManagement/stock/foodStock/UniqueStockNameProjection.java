@@ -1,4 +1,4 @@
-package HotelManagement.foodStock;
+package HotelManagement.stock.foodStock;
 
 public interface UniqueStockNameProjection {
     String getStockName();

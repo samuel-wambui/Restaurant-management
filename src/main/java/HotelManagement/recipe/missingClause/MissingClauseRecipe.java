@@ -1,10 +1,8 @@
 package HotelManagement.recipe.missingClause;
 
-import HotelManagement.foodStock.FoodStock;
-import HotelManagement.menu.Menu;
-import HotelManagement.recipe.Recipe;
+import HotelManagement.stock.foodStock.FoodStock;
 import HotelManagement.recipe.todayRecipe.OrderedRecipe;
-import HotelManagement.spices.SpicesAndSeasonings;
+import HotelManagement.stock.foodStock.spices.SpicesAndSeasonings;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

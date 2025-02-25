@@ -1,4 +1,4 @@
-package HotelManagement.foodStock;
+package HotelManagement.stock.foodStock;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

@@ -1,4 +1,4 @@
-package HotelManagement.foodStock.unitMeasurement;
+package HotelManagement.stock.foodStock.unitMeasurement;
 
 import HotelManagement.ApiResponse.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;

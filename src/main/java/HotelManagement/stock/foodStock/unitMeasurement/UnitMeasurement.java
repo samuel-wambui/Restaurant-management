@@ -1,4 +1,4 @@
-package HotelManagement.foodStock.unitMeasurement;
+package HotelManagement.stock.foodStock.unitMeasurement;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

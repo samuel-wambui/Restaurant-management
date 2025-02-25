@@ -1,6 +1,5 @@
-package HotelManagement.spices;
+package HotelManagement.stock.foodStock.spices;
 
-import HotelManagement.recipe.Recipe;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

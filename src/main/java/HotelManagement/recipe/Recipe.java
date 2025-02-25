@@ -1,10 +1,9 @@
 package HotelManagement.recipe;
 
-import HotelManagement.foodStock.FoodStock;
-import HotelManagement.menu.Menu;
+import HotelManagement.stock.foodStock.FoodStock;
 import HotelManagement.recipe.missingClause.MissingClauseRecipe;
 import HotelManagement.recipe.todayRecipe.OrderedRecipe;
-import HotelManagement.spices.SpicesAndSeasonings;
+import HotelManagement.stock.foodStock.spices.SpicesAndSeasonings;
 import jakarta.persistence.*;
 
 import java.util.HashSet;

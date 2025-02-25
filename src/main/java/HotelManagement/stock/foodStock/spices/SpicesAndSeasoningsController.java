@@ -1,4 +1,4 @@
-package HotelManagement.spices;
+package HotelManagement.stock.foodStock.spices;
 
 
 import org.springframework.beans.factory.annotation.Autowired;

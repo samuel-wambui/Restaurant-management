@@ -1,4 +1,4 @@
-package HotelManagement.foodStock;
+package HotelManagement.stock.foodStock;
 
 import lombok.Data;
 

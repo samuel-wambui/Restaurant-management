@@ -1,8 +1,7 @@
-package HotelManagement.spices;
+package HotelManagement.stock.foodStock.spices;
 
 
 
-import HotelManagement.recipe.Recipe;
 import HotelManagement.recipe.RecipeRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

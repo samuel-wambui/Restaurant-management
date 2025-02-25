@@ -1,4 +1,4 @@
-package HotelManagement.spices;
+package HotelManagement.stock.foodStock.spices;
 
 import HotelManagement.recipe.Recipe;
 import lombok.AllArgsConstructor;

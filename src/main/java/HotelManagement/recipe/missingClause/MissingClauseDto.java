@@ -1,7 +1,5 @@
 package HotelManagement.recipe.missingClause;
 
-import HotelManagement.foodStock.FoodStock;
-import HotelManagement.spices.SpicesAndSeasonings;
 import lombok.Data;
 
 import java.util.Set;

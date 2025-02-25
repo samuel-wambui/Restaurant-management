@@ -3,7 +3,6 @@ package HotelManagement.recipe.todayRecipe;
 import HotelManagement.menu.Menu;
 import HotelManagement.recipe.Recipe;
 import HotelManagement.recipe.missingClause.MissingClauseRecipe;
-import HotelManagement.spices.SpicesAndSeasonings;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;

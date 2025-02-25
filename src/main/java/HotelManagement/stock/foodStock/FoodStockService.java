@@ -1,5 +1,8 @@
-package HotelManagement.foodStock;
+package HotelManagement.stock.foodStock;
 
+import HotelManagement.stock.Category.Category;
+import HotelManagement.stock.Category.CategoryRepo;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -7,12 +10,16 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class FoodStockService {
 
     @Autowired
     private FoodStockRepo foodStockRepo;
+    @Autowired
+    private CategoryRepo categoryRepository;
 
     // Create a new ingredient
     public FoodStock createIngredient(FoodStockDto foodStockDto) {
@@ -23,9 +30,21 @@ public class FoodStockService {
         ingredient.setExpiryDate(foodStockDto.getExpiryDate());
         ingredient.setUnitNumber(foodStockDto.getUnitNumber());
         ingredient.setStockNumber(generateSockNumber());
-        return foodStockRepo.save(ingredient);
 
+        // Validate and set categories from the DTO.
+        if (foodStockDto.getCategoryIds() != null && !foodStockDto.getCategoryIds().isEmpty()) {
+            Set<Category> categories = foodStockDto.getCategoryIds().stream()
+                    .map(categoryId -> categoryRepository.findById(categoryId)
+                            .orElseThrow(() -> new EntityNotFoundException("Category not found with ID: " + categoryId)))
+                    .collect(Collectors.toSet());
+            ingredient.setCategories(categories);
+        } else {
+            throw new IllegalArgumentException("At least one category must be provided.");
+        }
+
+        return foodStockRepo.save(ingredient);
     }
+
 
     private String generateSockNumber() {
         Integer lastNumber = foodStockRepo.findLastServiceNumber();

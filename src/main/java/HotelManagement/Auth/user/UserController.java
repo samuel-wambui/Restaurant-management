@@ -17,6 +17,7 @@ public class UserController {
     private final UserService userService;
 
     private final EmailSender emailSender;
+
     public UserController(UserService userService, EmailSender emailSender) {
         this.userService = userService;
         this.emailSender = emailSender;
@@ -27,8 +28,6 @@ public class UserController {
     public String welcome() {
         return "WELCOME TO EQUIFARM";
     }
-
-
 
 
     @GetMapping("/{id}")
@@ -50,12 +49,12 @@ public class UserController {
             response.setMessage("role successfully assigned to the user");
             response.setStatusCode(HttpStatus.OK.value());
             response.setEntity(updatedUser);
-            return new ResponseEntity (response, HttpStatus.OK);
+            return new ResponseEntity(response, HttpStatus.OK);
         } catch (Exception e) {
             ApiResponse response = new ApiResponse<>();
             response.setMessage("Internal Server Error");
             response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-            return new ResponseEntity(response,HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -78,5 +77,21 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-}
 
+    @PostMapping("/assingDepartment")
+    public ResponseEntity<ApiResponse<User>> assignDepartmentToEmployee(@PathVariable Long userId, @RequestBody List<Long> departmentIds) {
+        ApiResponse<User> response = new ApiResponse<>();
+        try {
+
+            User updatedUser = userService.assignDepartments(userId, departmentIds);
+            response.setMessage("department successfully assigned to the user");
+            response.setStatusCode(HttpStatus.OK.value());
+            response.setEntity(updatedUser);
+            return new ResponseEntity(response, HttpStatus.OK);
+        } catch (Exception e) {
+            response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            response.setMessage("Internal Server Error");
+            return new ResponseEntity(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+}

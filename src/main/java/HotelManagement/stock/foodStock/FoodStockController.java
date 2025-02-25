@@ -1,4 +1,4 @@
-package HotelManagement.foodStock;
+package HotelManagement.stock.foodStock;
 
 import HotelManagement.ApiResponse.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Set;
 
 @Data
 @AllArgsConstructor
@@ -16,7 +17,8 @@ public class UserDTO {
     private String phoneNumber;
     private String email;
     private String password;
-    private List<Long> roleIds;
+    private Set<Long> roleIds;
+    private Set<Long> departmentIds;
 }
 
 

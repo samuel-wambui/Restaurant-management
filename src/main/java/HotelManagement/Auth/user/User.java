@@ -1,5 +1,6 @@
 package HotelManagement.Auth.user;
 
+import HotelManagement.Departments.DepartmentEntity;
 import HotelManagement.roles.Role;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -77,6 +78,13 @@ public class User implements UserDetails {
  )
  private List<Role> role = new ArrayList<>();
 
+ @ManyToMany
+ @JoinTable(
+         name = "user_department",
+         joinColumns = @JoinColumn(name = "user_id"),
+         inverseJoinColumns = @JoinColumn(name = "department_id")
+ )
+ private Set<DepartmentEntity> departments = new HashSet<>();
  @Override
  public Collection<? extends GrantedAuthority> getAuthorities() {
   if (role == null || role.isEmpty()) {

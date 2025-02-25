@@ -1,4 +1,4 @@
-package HotelManagement.foodStock.unitMeasurement;
+package HotelManagement.stock.foodStock.unitMeasurement;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

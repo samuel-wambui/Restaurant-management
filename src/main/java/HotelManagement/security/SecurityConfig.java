@@ -73,7 +73,9 @@ public class SecurityConfig {
                                 "/missingClause/**",
                                 "/unitMeasurement/**",
                                 "/costPerRequest/**",
-                                "/api/employees/**"
+                                "/api/employees/**",
+                                "/stock/category/**",
+                                "api/department/**"
 
                         ).permitAll()
                         .anyRequest().authenticated()
