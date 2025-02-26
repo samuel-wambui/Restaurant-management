@@ -31,7 +31,7 @@ public class DepartmentController {
         }
     }
 
-    @GetMapping("getAllDepartments")
+    @GetMapping("/getAllDepartments")
     public ResponseEntity<ApiResponse<List<DepartmentEntity>>> getAllDepartments() {
         ApiResponse<List<DepartmentEntity>> apiResponse = new ApiResponse<>();
         try {
@@ -47,8 +47,8 @@ public class DepartmentController {
 
         }
     }
-    @PostMapping("updateDepartment")
-    public ResponseEntity<ApiResponse<DepartmentEntity>> updateDepartment(@RequestBody DepartmentDto departmentDto, @PathVariable Long id) {
+    @PostMapping("/updateDepartment/{id}")
+    public ResponseEntity<ApiResponse<DepartmentEntity>> updateDepartment(@RequestBody DepartmentDto departmentDto, @RequestParam Long id) {
         ApiResponse<DepartmentEntity> apiResponse = new ApiResponse<>();
         try {
             DepartmentEntity departmentEntity = departmentService.update(departmentDto, id);
