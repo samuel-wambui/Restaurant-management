@@ -54,7 +54,7 @@ public class CategoryController {
         try {
             List<Category> category = categoryService.getAllCategory();
             response.setStatusCode(HttpStatus.OK.value());
-            response.setMessage("Category updated successfully");
+            response.setMessage("Categories fetched successfully");
             response.setEntity(category);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
