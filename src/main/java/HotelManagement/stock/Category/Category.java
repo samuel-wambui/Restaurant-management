@@ -1,6 +1,7 @@
 package HotelManagement.stock.Category;
 
 import HotelManagement.Departments.DepartmentEntity;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,6 +22,7 @@ public class Category {
     private boolean isDeleted = false;
 
     @ManyToMany
+    @JsonIgnore
     @JoinTable(
             name = "category_department",
             joinColumns = @JoinColumn(name = "category_id"),

@@ -16,7 +16,7 @@ public class CategoryController {
     private CategoryService categoryService;
 
     @PostMapping("/create/category")
-    public ResponseEntity<ApiResponse<Category>> createCategory(CategoryDto categoryDto) {
+    public ResponseEntity<ApiResponse<Category>> createCategory(@RequestBody CategoryDto categoryDto) {
         ApiResponse<Category> response = new ApiResponse<>();
         try {
             Category category = categoryService.createCategory(categoryDto);
