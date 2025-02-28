@@ -21,6 +21,6 @@ public class UnitMeasurement {
     private String subUnitName;
     private int subUnit;
     private String unitMeasurementNumber;
-
+    private boolean isDeleted= false;
 
 }
