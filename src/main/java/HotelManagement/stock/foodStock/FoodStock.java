@@ -45,9 +45,9 @@ public class FoodStock {
     private String deletedFlag = "N";
     private String depletedFlag= "N";
     private String stockNumber;
-    @JsonFormat(pattern = "dd/MM/yyyy 'Time:' HH:mm:ss")
+    @JsonFormat(pattern = "dd/MM/yyyy")
     private LocalDateTime purchaseDate;
-    @JsonFormat(pattern = "dd/MM/yyyy 'Time:' HH:mm:ss")
+    @JsonFormat(pattern = "dd/MM/yyyy")
     private LocalDateTime expiryDate;
     private boolean expired= false;
 
