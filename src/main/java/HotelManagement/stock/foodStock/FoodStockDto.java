@@ -16,4 +16,5 @@ public class FoodStockDto {
     private LocalDateTime purchaseDate;
     @JsonFormat(pattern = "M/d/yyyy, HH:mm:ss")
     private LocalDateTime expiryDate;
+
 }
