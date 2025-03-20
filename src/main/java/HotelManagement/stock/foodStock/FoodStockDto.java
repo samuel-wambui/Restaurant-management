@@ -12,9 +12,9 @@ public class FoodStockDto {
     private String unitNumber;
     private String foodStockType;
     private Set<Long> categoryIds;
-    @JsonFormat(pattern = "dd/MM/yyyy 'Time:' HH:mm:ss")
+    @JsonFormat(pattern = "M/d/yyyy, HH:mm:ss")
     private LocalDateTime purchaseDate;
-    @JsonFormat(pattern = "dd/MM/yyyy 'Time:' HH:mm:ss")
+    @JsonFormat(pattern = "M/d/yyyy, HH:mm:ss")
     private LocalDateTime expiryDate;
 
 }
