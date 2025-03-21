@@ -30,6 +30,7 @@ public class FoodStockService {
         ingredient.setExpiryDate(foodStockDto.getExpiryDate());
         ingredient.setUnitNumber(foodStockDto.getUnitNumber());
         ingredient.setStockNumber(generateSockNumber());
+        ingredient.setFoodStockType(foodStockDto.getFoodStockType());
 
         // Validate and set categories from the DTO.
         if (foodStockDto.getCategoryIds() != null && !foodStockDto.getCategoryIds().isEmpty()) {
