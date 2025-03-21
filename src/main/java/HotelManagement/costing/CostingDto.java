@@ -16,9 +16,8 @@ public class CostingDto {
     private Double totalCost;
     private Double discount;
     private CostCategory costCategory;
-    private Long commodityId;
     private String foodSockNumber;
-    @JsonFormat(pattern = "dd/MM/yyyy 'Time:' HH:mm:ss")
+    @JsonFormat(pattern = "M/d/yyyy, HH:mm:ss")
     private LocalDateTime date;
 
 }

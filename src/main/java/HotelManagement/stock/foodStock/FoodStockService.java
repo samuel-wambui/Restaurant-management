@@ -86,7 +86,9 @@ public class FoodStockService {
     public List<FoodStock> getAllIngredients() {
         return foodStockRepo.findAllByDeletedFlagAndExpiredOrderByExpiryDateAsc("N", false);
     }
-
+public List<FoodStock> getAllFoodStockWithoutCost(){
+        return foodStockRepo.findFoodStocksWithoutCost();
+}
     // Update an existing ingredient
     public FoodStock updateIngredient(Long id, FoodStock updatedIngredient) {
         return foodStockRepo.findById(id).map(ingredient -> {

@@ -163,7 +163,7 @@ public CostPerRequest createRequestCost(CostPerRequestDto cost) {
 
         // Retrieve the FoodStock object from the repository
         Optional<FoodStock> optionalFoodStock = foodStockRepo.findByIdAndDeletedFlagAndExpiredAndDepletedFlag(id, "N", false);
-        if (optionalFoodStock.isPresent()){
+        if (optionalFoodStock.isPresent() ){
             FoodStock foodStock = optionalFoodStock.get();
         System.out.println("FoodStock retrieval result: " + foodStock.getStockName());
 
@@ -207,8 +207,16 @@ public CostPerRequest createRequestCost(CostPerRequestDto cost) {
 
 
     private List<FoodStock> fetchValidFoodStocks(String stockName) {
-        return foodStockRepo.findValidFoodStocks(stockName);  // Assuming findValidFoodStocks is defined in the repo
+        // Fetch all valid food stocks by stock name
+        List<FoodStock> stocks = foodStockRepo.findValidFoodStocks(stockName);
+
+        // Filter out food stocks that do not have an assigned costing and sort them by expiry date
+        return stocks.stream()
+                .filter(fs -> costingRepo.findByStockNumber(fs.getStockNumber()).isPresent())
+                .sorted(Comparator.comparing(FoodStock::getExpiryDate))
+                .collect(Collectors.toList());
     }
+
     private BigDecimal fetchTotalAvailableQuantity(String stockName) {
         // This assumes you have a method in your foodStockRepo to fetch the total quantity by stock name
         return BigDecimal.valueOf(foodStockRepo.findTotalQuantityByName(stockName));

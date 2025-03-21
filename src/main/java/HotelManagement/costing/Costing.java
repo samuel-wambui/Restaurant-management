@@ -23,13 +23,13 @@ public class Costing {
 
     @Enumerated(EnumType.STRING)
     private CostCategory costCategory;
-    private Long commodityId;
+//    private Long commodityId;
     private String stockNumber;
 
     private String deletedFlag = "N";
 
     private Long recipeId;
-    @JsonFormat(pattern = "dd/MM/yyyy 'Time:' HH:mm:ss")
+    @JsonFormat(pattern = "M/d/yyyy, HH:mm:ss")
     private LocalDateTime date;
 
 

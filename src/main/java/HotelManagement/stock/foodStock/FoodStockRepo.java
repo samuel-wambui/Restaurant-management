@@ -91,6 +91,8 @@ public interface FoodStockRepo extends JpaRepository<FoodStock,Long> {
             f.expiry_date ASC
         """, nativeQuery = true)
     List<FoodStockProjection> findFoodStockWithDetails();
+    @Query("SELECT f FROM FoodStock f LEFT JOIN Costing c ON f.stockNumber = c.stockNumber WHERE c IS NULL ORDER BY f.purchaseDate DESC")
+    List<FoodStock> findFoodStocksWithoutCost();
 
 }
 

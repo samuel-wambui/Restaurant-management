@@ -11,11 +11,11 @@ import java.util.Optional;
 @Repository
 public interface CostingRepo extends JpaRepository<Costing, Long> {
 
-    @Query("SELECT c FROM Costing c WHERE c.recipeId = :recipeId AND c.commodityId = :commodityId AND c.costCategory = :costCategory AND c.deletedFlag = 'N'")
-    Optional<Costing> findByRecipeIdAndCommodityIdAndCostCategory(
-            @Param("recipeId") Long recipeId,
-            @Param("commodityId") Long commodityId,
-            @Param("costCategory") CostCategory costCategory);
+//    @Query("SELECT c FROM Costing c WHERE c.recipeId = :recipeId AND c.commodityId = :commodityId AND c.costCategory = :costCategory AND c.deletedFlag = 'N'")
+//    Optional<Costing> findByRecipeIdAndCommodityIdAndCostCategory(
+//            @Param("recipeId") Long recipeId,
+//            @Param("commodityId") Long commodityId,
+//            @Param("costCategory") CostCategory costCategory);
 
     boolean existsByRecipeId(Long recipeId);
 

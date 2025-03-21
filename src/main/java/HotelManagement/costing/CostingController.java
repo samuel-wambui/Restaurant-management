@@ -64,24 +64,6 @@ public class CostingController {
         }
     }
 
-    @PutMapping("/update/{id}")
-    public ResponseEntity<ApiResponse<Costing>> updateCost(@PathVariable Long id, @RequestBody CostingDto costingDto) {
-        ApiResponse<Costing> response = new ApiResponse<>();
-
-        try {
-            Costing updatedCost = costingService.updateCost(id, costingDto);
-            response.setMessage("Cost updated successfully");
-            response.setStatusCode(HttpStatus.OK.value());
-            response.setEntity(updatedCost);
-            return new ResponseEntity<>(response, HttpStatus.OK);
-
-        } catch (IllegalArgumentException e) {
-            response.setMessage(e.getMessage());
-            response.setStatusCode(HttpStatus.BAD_REQUEST.value());
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-        }
-    }
-
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteCost(@PathVariable Long id) {
         ApiResponse<Void> response = new ApiResponse<>();

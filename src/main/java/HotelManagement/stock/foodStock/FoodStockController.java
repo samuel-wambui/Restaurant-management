@@ -52,6 +52,22 @@ public class FoodStockController {
             return new ResponseEntity<>(response, HttpStatus.GONE);
         }
     }
+    @GetMapping("/allFoOdStockWithoutCost")
+    public ResponseEntity<ApiResponse<List<FoodStock>>> allFoOdStockWithoutCost(){
+        ApiResponse<List<FoodStock>> response = new ApiResponse<>();
+        try{
+            List<FoodStock> foodStocks = foodStockService.getAllFoodStockWithoutCost();
+            response.setStatusCode(HttpStatus.OK.value());
+            response.setMessage("Food stock without costs list ");
+            response.setEntity(foodStocks);
+            return new ResponseEntity<>(response,HttpStatus.OK);
+        }
+        catch (Exception e){
+           response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
+           response.setMessage("server error please try again later");
+        }
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
 
         @GetMapping("/expiring-soon")
         public ResponseEntity<ApiResponse<List<FoodStock>>> foodStockExpiringSoon(
