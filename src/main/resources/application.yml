@@ -27,13 +27,13 @@ jobs:
 
       - name: Copy JAR to Server
         env:
-          SSH_PASSWORD: "samuel@1999"
+          SSH_PASSWORD: "root"
         run: |
           sshpass -p "$SSH_PASSWORD" scp -o StrictHostKeyChecking=no target/HotelManagement-0.0.1-SNAPSHOT.jar samuel@192.168.0.100:/home/samuel/javaProjects/
 
       - name: Restart Java Application on Server
         env:
-          SSH_PASSWORD: "samuel@1999"
+          SSH_PASSWORD: "root"
         run: |
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no samuel@192.168.0.100 << 'EOF'
           pkill -f HotelManagement-0.0.1-SNAPSHOT.jar || true  # Stop any existing process
