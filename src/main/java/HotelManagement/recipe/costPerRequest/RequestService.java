@@ -330,6 +330,7 @@ public CostPerRequest createRequestCost(CostPerRequestDto cost) {
             processSpices(updatedCost, fetchRecipe(existingCost.getRecipeNumber()), existingCost);
         }
 
+
         // Save updated entity
         return costPerRequestRepo.save(existingCost);
     }
