@@ -48,8 +48,24 @@ public enum Erole {
 
     )),
     ROLE_SUPERVISOR(Collections.emptySet()),
-    ROLE_WAITER(Collections.emptySet());
 
+    ROLE_WAITER(Collections.emptySet()),
+
+    ROLE_PARTNER(Set.of(
+            MANAGER_READ,
+            MANAGER_UPDATE,
+            MANAGER_CREATE,
+            MANAGER_DELETE)),
+
+    ROLE_SYSTEM(Set.of(
+            ADMIN_UPDATE,
+            ADMIN_CREATE,
+            ADMIN_READ,
+            ADMIN_DELETE,
+            MANAGER_READ,
+            MANAGER_UPDATE,
+            MANAGER_CREATE,
+            MANAGER_DELETE));
     @Getter
     private final Set<Permissions> permissions;
 
