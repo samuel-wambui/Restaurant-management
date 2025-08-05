@@ -19,7 +19,7 @@ public class ClientController {
     @PostMapping("/registerClient")
     public ResponseEntity<?> register(@RequestBody Map<String, String> request) {
         String name = request.get("name");
-        ClientDTO dto = clientService.registerNewClient(name);
+        ClientDTO dto = clientService.registerNewClient(name,ClientType.PARTNER);
         return ResponseEntity.ok(dto); // Includes appKey and appSecret (shown once)
     }
 }

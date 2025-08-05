@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -26,20 +28,27 @@ public class AuthControllerClient {
     public ResponseEntity<?> getToken(@RequestParam String appKey,
                                       @RequestParam String appSecret) {
 
-        Optional<Client> optionalClient = clientRepo.findByAppKey(appKey);
+        Optional<ClientAppRegister> optionalClient = clientRepo.findByAppKey(appKey);
         if (optionalClient.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }
 
-        Client client = optionalClient.get();
-        boolean match = new BCryptPasswordEncoder().matches(appSecret, client.getAppSecretHash());
+        ClientAppRegister clientAppRegister = optionalClient.get();
+        boolean match = new BCryptPasswordEncoder().matches(appSecret, clientAppRegister.getAppSecretHash());
 
-        if (!match || !client.isActive()) {
+        if (!match || !clientAppRegister.isActive()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         }
 
-        //String jwt = jwtService.generateToken(client.getAppKey()); // subject = appKey
-        //return ResponseEntity.ok(Map.of("access_token", jwt));
-        return null;
+        String clientType = clientAppRegister.getClientType().toString(); // e.g., "PARTNER" or "SYSTEM"
+
+        // Define scopes based on your rules, or leave empty if not used
+        List<String> scopes = List.of("read", "write"); // Example scopes; adjust as needed
+
+        String jwt = jwtService.generateClientToken(clientAppRegister.getAppKey(), clientType, scopes);
+
+        return ResponseEntity.ok(Map.of("access_token", jwt));
     }
+
+
 }

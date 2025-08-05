@@ -66,6 +66,7 @@ public class JwtService {
     public boolean validateRefreshToken(String token) {
         return !isTokenExpired(token);
     }
+
     public String extractUserName(String token) {
         return extractClaim(token, Claims::getSubject);
     }
@@ -114,4 +115,26 @@ public class JwtService {
     private Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
+
+
+
+    //Extrnal intergration
+    public String generateClientToken(String clientId, String clientType, List<String> scopes) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("client", true);              // flag to mark this as a client
+        claims.put("clientType", clientType);    // e.g., "PARTNER" or "SYSTEM"
+        claims.put("scopes", scopes);
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(clientId)
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 60 * 60 * 1000)) // 1 hour
+                .signWith(getKey())
+                .compact();
+    }
+    public String extractClientType(String token) {
+        return extractClaim(token, claims -> claims.get("clientType", String.class));
+    }
+
 }

@@ -1,9 +1,6 @@
 package HotelManagement.apiIntergrationSecurity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -12,7 +9,7 @@ import java.util.UUID;
 @Data
 @Entity
 @Table(name = "clients")
-public class Client {
+public class ClientAppRegister {
     @Id
     private UUID id;
 
@@ -27,5 +24,7 @@ public class Client {
 
     private LocalDateTime createdAt;
 
+    @Enumerated(EnumType.STRING)
+    private ClientType clientType;
 
 }
